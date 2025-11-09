@@ -1,7 +1,8 @@
 # React + TypeScript + Vite
 
 ## Prerequisites
-- node.js
+- **Node.js** (v18 or higher)
+- **npm** (comes with Node.js)
 ## Setup
 ```
 npm install
