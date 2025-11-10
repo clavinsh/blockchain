@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
+import { authApi, tokenManager } from "@/services/api";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    deviceCode: "",
+    username: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -13,7 +14,7 @@ export default function RegisterPage() {
     confirmPassword: ""
   });
   const [errors, setErrors] = useState({
-    deviceCode: "",
+    username: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -24,52 +25,52 @@ export default function RegisterPage() {
 
   const validateForm = () => {
     const newErrors = {
-      deviceCode: "",
+      username: "",
       firstName: "",
       lastName: "",
       email: "",
       password: "",
       confirmPassword: ""
     };
-    
-    // Device code validation
-    if (!formData.deviceCode) {
-      newErrors.deviceCode = "Aparāta kods ir obligāts";
-    } else if (formData.deviceCode.length < 8) {
-      newErrors.deviceCode = "Aparāta kodam jābūt vismaz 8 simboli garam";
+
+    // Username validation
+    if (!formData.username) {
+      newErrors.username = "Lietotājvārds ir obligāts";
+    } else if (formData.username.length < 3) {
+      newErrors.username = "Lietotājvārdam jābūt vismaz 3 simboli garam";
     }
-    
+
     // First name validation
     if (!formData.firstName) {
       newErrors.firstName = "Vārds ir obligāts";
     }
-    
+
     // Last name validation
     if (!formData.lastName) {
       newErrors.lastName = "Uzvārds ir obligāts";
     }
-    
+
     // Email validation
     if (!formData.email) {
       newErrors.email = "E-pasts ir obligāts";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Nepareizs e-pasta formāts";
     }
-    
+
     // Password validation
     if (!formData.password) {
       newErrors.password = "Parole ir obligāta";
     } else if (formData.password.length < 6) {
       newErrors.password = "Parolei jābūt vismaz 6 simboli garā";
     }
-    
+
     // Confirm password validation
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Paroles apstiprināšana ir obligāta";
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Paroles nesakrīt";
     }
-    
+
     setErrors(newErrors);
     return !Object.values(newErrors).some(error => error !== "");
   };
@@ -80,7 +81,7 @@ export default function RegisterPage() {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name as keyof typeof errors]) {
       setErrors(prev => ({
@@ -92,28 +93,40 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
-      // TODO: Replace with actual API call
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // TODO: Handle actual registration response
-      console.log('Registration attempt:', formData);
-      
-      // For now, redirect to login with success message
-      navigate('/login');
+      const response = await authApi.register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      });
+
+      if (response.success && response.token && response.user) {
+        // Store token and user info
+        tokenManager.setToken(response.token);
+        tokenManager.setUser(response.user);
+
+        // Redirect to dashboard
+        navigate('/login');
+      } else {
+        setErrors(prev => ({
+          ...prev,
+          username: response.message || "Reģistrācija neizdevās"
+        }));
+      }
     } catch (error) {
       console.error('Registration error:', error);
-      setErrors(prev => ({ 
+      setErrors(prev => ({
         ...prev,
-        deviceCode: "Reģistrācija neizdevās. Lūdzu, mēģiniet vēlreiz." 
+        username: "Savienojuma kļūda. Lūdzu, mēģiniet vēlreiz."
       }));
     } finally {
       setIsLoading(false);
@@ -127,35 +140,34 @@ export default function RegisterPage() {
             Reģistrācija
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Ievadiet aparāta kodu un personīgo informāciju
+            Ievadiet savu informāciju, lai izveidotu kontu
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="deviceCode" className="block text-sm font-medium text-gray-700">
-                Aparāta kods *
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                Lietotājvārds *
               </label>
               <input
-                id="deviceCode"
-                name="deviceCode"
+                id="username"
+                name="username"
                 type="text"
                 required
-                value={formData.deviceCode}
+                value={formData.username}
                 onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${
-                  errors.deviceCode 
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${errors.username
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } placeholder-gray-500 text-gray-900`}
-                placeholder="Ievadiet aparāta kodu"
+                  } placeholder-gray-500 text-gray-900`}
+                placeholder="Izvēlieties lietotājvārdu"
               />
-              {errors.deviceCode && (
-                <p className="mt-1 text-sm text-red-600">{errors.deviceCode}</p>
+              {errors.username && (
+                <p className="mt-1 text-sm text-red-600">{errors.username}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
                 Vārds *
@@ -167,18 +179,17 @@ export default function RegisterPage() {
                 required
                 value={formData.firstName}
                 onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${
-                  errors.firstName 
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${errors.firstName
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } placeholder-gray-500 text-gray-900`}
+                  } placeholder-gray-500 text-gray-900`}
                 placeholder="Jūsu vārds"
               />
               {errors.firstName && (
                 <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
                 Uzvārds *
@@ -190,18 +201,17 @@ export default function RegisterPage() {
                 required
                 value={formData.lastName}
                 onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${
-                  errors.lastName 
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${errors.lastName
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } placeholder-gray-500 text-gray-900`}
+                  } placeholder-gray-500 text-gray-900`}
                 placeholder="Jūsu uzvārds"
               />
               {errors.lastName && (
                 <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 E-pasts *
@@ -213,18 +223,17 @@ export default function RegisterPage() {
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${
-                  errors.email 
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${errors.email
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } placeholder-gray-500 text-gray-900`}
+                  } placeholder-gray-500 text-gray-900`}
                 placeholder="jūsu.epasts@example.com"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Parole *
@@ -236,18 +245,17 @@ export default function RegisterPage() {
                 required
                 value={formData.password}
                 onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${
-                  errors.password 
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${errors.password
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } placeholder-gray-500 text-gray-900`}
+                  } placeholder-gray-500 text-gray-900`}
                 placeholder="Izvēlieties paroli"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                 Apstiprināt paroli *
@@ -259,11 +267,10 @@ export default function RegisterPage() {
                 required
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${
-                  errors.confirmPassword 
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:z-10 sm:text-sm ${errors.confirmPassword
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } placeholder-gray-500 text-gray-900`}
+                  } placeholder-gray-500 text-gray-900`}
                 placeholder="Ievadiet paroli atkārtoti"
               />
               {errors.confirmPassword && (
@@ -273,8 +280,8 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full"
               disabled={isLoading}
             >
@@ -288,7 +295,7 @@ export default function RegisterPage() {
               )}
             </Button>
           </div>
-          
+
           <div className="text-center">
             <Link to="/login" className="text-sm text-blue-600 hover:text-blue-500">
               Jau ir konts? Pierakstīties šeit

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
+import { authApi, tokenManager } from "@/services/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -53,28 +54,37 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
-      // TODO: Replace with actual API call
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // TODO: Handle actual authentication response
-      console.log('Login attempt:', formData);
-      
-      // For now, redirect to dashboard
-      navigate('/dashboard');
+      const response = await authApi.login({
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (response.success && response.token && response.user) {
+        // Store token and user info
+        tokenManager.setToken(response.token);
+        tokenManager.setUser(response.user);
+
+        // Redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        setErrors({
+          email: "",
+          password: response.message || "Nepareizi pierakstīšanās dati"
+        });
+      }
     } catch (error) {
       console.error('Login error:', error);
-      setErrors({ 
-        email: "", 
-        password: "Nepareizi pierakstīšanās dati" 
+      setErrors({
+        email: "",
+        password: "Savienojuma kļūda. Lūdzu, mēģiniet vēlreiz."
       });
     } finally {
       setIsLoading(false);
