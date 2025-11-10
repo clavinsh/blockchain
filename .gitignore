@@ -52,3 +52,8 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# DB (MySQL)
+*.db
+*.db-shm
+*.db-wal
