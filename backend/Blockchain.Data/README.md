@@ -1,4 +1,4 @@
-# DB scaffoldošana
+# DB scaffolding 
 
 Please check that the MySQL database is up and running locally.
 
