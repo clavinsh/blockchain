@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Scaffolding.Internal;
 
-namespace Blockchain.Data.Models;
+namespace backend.Models;
 
 public partial class BlockchainDbContext : DbContext
 {
