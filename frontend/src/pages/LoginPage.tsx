@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
+<<<<<<< HEAD
+=======
+import { authApi, tokenManager } from "@/services/api";
+>>>>>>> 4ebcac667964ae9d05585851249f614ed2d77f35
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -53,12 +57,17 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 4ebcac667964ae9d05585851249f614ed2d77f35
     if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
+<<<<<<< HEAD
     
     try {
       // TODO: Replace with actual API call
@@ -75,6 +84,33 @@ export default function LoginPage() {
       setErrors({ 
         email: "", 
         password: "Nepareizi pierakstīšanās dati" 
+=======
+
+    try {
+      const response = await authApi.login({
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (response.success && response.token && response.user) {
+        // Store token and user info
+        tokenManager.setToken(response.token);
+        tokenManager.setUser(response.user);
+
+        // Redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        setErrors({
+          email: "",
+          password: response.message || "Nepareizi pierakstīšanās dati"
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrors({
+        email: "",
+        password: "Savienojuma kļūda. Lūdzu, mēģiniet vēlreiz."
+>>>>>>> 4ebcac667964ae9d05585851249f614ed2d77f35
       });
     } finally {
       setIsLoading(false);
