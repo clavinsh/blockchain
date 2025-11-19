@@ -109,13 +109,18 @@ export default function RegisterPage() {
         lastName: formData.lastName
       });
 
-      if (response.success && response.token && response.user) {
-        // Store token and user info
-        tokenManager.setToken(response.token);
-        tokenManager.setUser(response.user);
-
-        // Redirect to dashboard
-        navigate('/login');
+      if (response.success) {
+        if (response.token && response.user) {
+          // Auto-login if token provided
+          tokenManager.setToken(response.token);
+          tokenManager.setUser(response.user);
+          alert(response.message || "Reģistrācija veiksmīga! Jūs esat automātiski piereģistrēti.");
+          navigate('/dashboard');
+        } else {
+          // Just registration success, redirect to login
+          alert(response.message || "Reģistrācija veiksmīga! Lūdzu, pierakstieties.");
+          navigate('/login');
+        }
       } else {
         setErrors(prev => ({
           ...prev,

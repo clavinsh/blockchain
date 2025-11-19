@@ -9,18 +9,24 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [selectedCar, setSelectedCar] = useState('Mana mašīna #1')
+  const [selectedCarId, setSelectedCarId] = useState<number | null>(null)
+  const [userCars] = useState<Array<{carId: number, brand: string, model: string, licensePlate: string, role: string}>>([])
+
+  // TODO: Load user's cars and roles from API
+  // useEffect(() => {
+  //   loadUserCars()
+  // }, [])
 
   const handleLogout = () => {
     // TODO: Implement logout logic
+    localStorage.removeItem('token')
     navigate('/login')
   }
 
   const navigationItems = [
     { path: '/dashboard', label: 'Galvenā panelis', icon: '📊' },
     { path: '/analyzed-data', label: 'Analizētie dati', icon: '📈' },
-    { path: '/car-manager', label: 'Mašīnu pārvaldība', icon: '🚗' },
-    { path: '/reports', label: 'Manas atskaites', icon: '📋' }
+    { path: '/car-manager', label: 'Mašīnu pārvaldība', icon: '🚗' }
   ]
 
   return (
@@ -39,18 +45,29 @@ export default function Layout({ children }: LayoutProps) {
             {/* Car Selector */}
             <div className="flex items-center space-x-4">
               <select 
-                value={selectedCar}
-                onChange={(e) => setSelectedCar(e.target.value)}
+                value={selectedCarId || ''}
+                onChange={(e) => setSelectedCarId(Number(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="Mana mašīna #1">Mana mašīna #1</option>
-                <option value="Mana mašīna #2">Mana mašīna #2</option>
-                <option value="BMW X5">BMW X5 - Shared</option>
+                <option value="">Izvēlieties auto</option>
+                {userCars.map((car) => (
+                  <option key={car.carId} value={car.carId}>
+                    {car.brand} {car.model} ({car.licensePlate}) - {car.role}
+                  </option>
+                ))}
               </select>
 
               {/* User Menu */}
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">Jānis Bērziņš</span>
+                <span className="text-sm text-gray-700">
+                  {/* TODO: Get from user context/token */}
+                  Lietotājs
+                </span>
+                {selectedCarId && (
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    {userCars.find(car => car.carId === selectedCarId)?.role || ''}
+                  </span>
+                )}
                 <Button 
                   variant="outline" 
                   size="sm"

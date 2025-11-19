@@ -1,54 +1,76 @@
+import { useState, useEffect } from 'react'
+
+interface CarData {
+  speed: number
+  engineTemp: number
+  fuelLevel: number
+  lastUpdate: string
+}
+
 export default function DashboardPage() {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header with car selection */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <div className="ml-8">
-                <select className="border border-gray-300 rounded-md px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Izvēlieties auto</option>
-                  <option value="car1">BMW X5 (ABC-123)</option>
-                  <option value="car2">Audi A4 (DEF-456)</option>
-                  <option value="car3">Mercedes C-Class (GHI-789)</option>
-                </select>
-              </div>
-            </div>
-            <nav className="flex space-x-6">
-              <a href="/dashboard" className="text-blue-600 font-medium">Dashboard</a>
-              <a href="/analyzed-data" className="text-gray-600 hover:text-gray-900">Analizētie dati</a>
-              <a href="/car-manager" className="text-gray-600 hover:text-gray-900">Auto pārvaldnieks</a>
-              <a href="/reports" className="text-gray-600 hover:text-gray-900">Mani atskaites</a>
-            </nav>
-          </div>
+  const [carData, setCarData] = useState<CarData | null>(null)
+  const [selectedCarId] = useState<number | null>(null)
+  
+  // TODO: Get selectedCarId from Layout component context
+  // TODO: Fetch real car data from CarDataCache table
+  
+  useEffect(() => {
+    if (selectedCarId) {
+      // TODO: Fetch car data from API
+      // fetchCarData(selectedCarId)
+      
+      setCarData({
+        speed: 85,
+        engineTemp: 92,
+        fuelLevel: 67,
+        lastUpdate: new Date().toLocaleTimeString('lv-LV')
+      })
+    }
+  }, [selectedCarId])
+
+  if (!selectedCarId) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Izvēlieties auto</h2>
+          <p className="text-gray-600">Lūdzu, izvēlieties auto no augšējās izvēlnes, lai redzētu tā datus.</p>
         </div>
-      </header>
+      </div>
+    )
+  }
+
+  return (
+    <div>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Live Data Card */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Aktuālie dati</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Ātrums:</span>
-                <span className="font-medium">85 km/h</span>
+            {carData ? (
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Ātrums:</span>
+                  <span className="font-medium">{carData.speed} km/h</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Dzinēja temp.:</span>
+                  <span className="font-medium">{carData.engineTemp}°C</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Degvielas līmenis:</span>
+                  <span className="font-medium">{carData.fuelLevel}%</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-4">
+                  Pēdējā atjaunināšana: {carData.lastUpdate}
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Dzinēja temp.:</span>
-                <span className="font-medium">92°C</span>
+            ) : (
+              <div className="text-gray-500 text-center py-4">
+                Ielādē datus...
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Degvielas līmenis:</span>
-                <span className="font-medium">67%</span>
-              </div>
-              <div className="text-xs text-gray-500 mt-4">
-                Pēdējā atjaunināšana: 14:32
-              </div>
-            </div>
+            )}
           </div>
 
           {/* System Status Card */}
@@ -134,5 +156,5 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
-  );
+  )
 }
