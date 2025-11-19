@@ -1,8 +1,13 @@
 import './App.css'
 import { AppRouter } from './router'
+import { CarProvider } from './contexts/CarContext'
 
 function App() {
-  return <AppRouter />
+  return (
+    <CarProvider>
+      <AppRouter />
+    </CarProvider>
+  )
 }
 
 export default App

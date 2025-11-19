@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using backend.Data;
 using backend.DTOs;
 using backend.Models;
 using backend.Services;
@@ -12,12 +11,12 @@ namespace backend.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly BlockchainDbContext _context;
     private readonly TokenService _tokenService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
-        ApplicationDbContext context,
+        BlockchainDbContext context,
         TokenService tokenService,
         ILogger<AuthController> logger)
     {
@@ -32,8 +31,8 @@ public class AuthController : ControllerBase
         try
         {
             // Find user by email
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive);
+            var user = await _context.UserTables
+                .FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
 
             if (user == null)
             {
@@ -89,7 +88,7 @@ public class AuthController : ControllerBase
         try
         {
             // Check if email already exists
-            if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+            if (await _context.UserTables.AnyAsync(u => u.Email == request.Email))
             {
                 return BadRequest(new LoginResponse
                 {
@@ -99,7 +98,7 @@ public class AuthController : ControllerBase
             }
 
             // Check if username already exists
-            if (await _context.Users.AnyAsync(u => u.Username == request.Username))
+            if (await _context.UserTables.AnyAsync(u => u.Username == request.Username))
             {
                 return BadRequest(new LoginResponse
                 {
@@ -112,7 +111,7 @@ public class AuthController : ControllerBase
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
             // Create new user
-            var user = new User
+            var user = new UserTable
             {
                 Username = request.Username,
                 Email = request.Email,
@@ -124,7 +123,7 @@ public class AuthController : ControllerBase
                 IsActive = true
             };
 
-            _context.Users.Add(user);
+            _context.UserTables.Add(user);
             await _context.SaveChangesAsync();
 
             // Generate JWT token

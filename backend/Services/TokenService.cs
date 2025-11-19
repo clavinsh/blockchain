@@ -15,7 +15,7 @@ public class TokenService
         _configuration = configuration;
     }
 
-    public string GenerateToken(User user)
+    public string GenerateToken(UserTable user)
     {
         var key = _configuration["Jwt:Key"]
             ?? throw new InvalidOperationException("JWT Key not configured");

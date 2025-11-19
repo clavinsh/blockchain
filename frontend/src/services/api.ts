@@ -63,6 +63,116 @@ export const authApi = {
 };
 
 // Token management
+export interface UserCar {
+  carId: number;
+  brand: string;
+  model: string;
+  year: number;
+  licensePlate: string;
+  vin?: string;
+  color?: string;
+  mileage: number;
+  assignedAt?: string;
+}
+
+export interface GetUserCarsResponse {
+  success: boolean;
+  message: string;
+  cars?: UserCar[];
+}
+
+export interface CarDataItem {
+  id: number;
+  carId: number;
+  carData: string;
+  insertTime?: string;
+}
+
+export interface GetCarDataResponse {
+  success: boolean;
+  message: string;
+  data?: CarDataItem[];
+}
+
+export const carApi = {
+  getUserCars: async (): Promise<GetUserCarsResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/cars`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`Failed to fetch user cars: ${response.status} ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Fetch error details:', error);
+      throw error;
+    }
+  },
+
+  getCarById: async (carId: number) => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars/${carId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch car details');
+    }
+
+    return response.json();
+  },
+
+  getCarData: async (carId: number, limit: number = 20): Promise<GetCarDataResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars/${carId}/data?limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch car data');
+    }
+
+    return response.json();
+  },
+};
+
 export const tokenManager = {
   getToken: (): string | null => {
     return localStorage.getItem('authToken');

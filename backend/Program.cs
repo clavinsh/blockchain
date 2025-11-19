@@ -1,9 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using backend.Data;
+using backend.Models;
 using backend.Services;
+
+// Prevent default claim type mapping
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +33,7 @@ builder.Services.AddCors(options =>
 
 // Add Database Context
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<BlockchainDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 // Add JWT Authentication
@@ -59,6 +63,7 @@ builder.Services.AddAuthorization();
 
 // Register services
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<CarService>();
 
 var app = builder.Build();
 

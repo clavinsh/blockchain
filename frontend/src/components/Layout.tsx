@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { carApi, tokenManager } from '@/services/api'
+import { useCarContext } from '@/contexts/CarContext'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -9,17 +11,41 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [selectedCarId, setSelectedCarId] = useState<number | null>(null)
-  const [userCars] = useState<Array<{carId: number, brand: string, model: string, licensePlate: string, role: string}>>([])
+  const { selectedCarId, setSelectedCarId, userCars, setUserCars } = useCarContext()
+  const [isLoadingCars, setIsLoadingCars] = useState(true)
+  const [user] = useState(tokenManager.getUser())
 
-  // TODO: Load user's cars and roles from API
-  // useEffect(() => {
-  //   loadUserCars()
-  // }, [])
+  const loadUserCars = async () => {
+    try {
+      setIsLoadingCars(true)
+      const response = await carApi.getUserCars()
+
+      if (response.success && response.cars) {
+        setUserCars(response.cars)
+
+        // Auto-select first car if available
+        if (response.cars.length > 0 && !selectedCarId) {
+          setSelectedCarId(response.cars[0].carId)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load user cars:', error)
+
+      // If unauthorized, redirect to login
+      if (error instanceof Error && error.message.includes('authentication')) {
+        handleLogout()
+      }
+    } finally {
+      setIsLoadingCars(false)
+    }
+  }
+
+  useEffect(() => {
+    loadUserCars()
+  }, [])
 
   const handleLogout = () => {
-    // TODO: Implement logout logic
-    localStorage.removeItem('token')
+    tokenManager.logout()
     navigate('/login')
   }
 
@@ -44,15 +70,18 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* Car Selector */}
             <div className="flex items-center space-x-4">
-              <select 
+              <select
                 value={selectedCarId || ''}
                 onChange={(e) => setSelectedCarId(Number(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isLoadingCars}
               >
-                <option value="">Izvēlieties auto</option>
+                <option value="">
+                  {isLoadingCars ? 'Ielādē...' : userCars.length === 0 ? 'Nav pieejamu auto' : 'Izvēlieties auto'}
+                </option>
                 {userCars.map((car) => (
                   <option key={car.carId} value={car.carId}>
-                    {car.brand} {car.model} ({car.licensePlate}) - {car.role}
+                    {car.brand} {car.model} ({car.licensePlate})
                   </option>
                 ))}
               </select>
@@ -60,16 +89,10 @@ export default function Layout({ children }: LayoutProps) {
               {/* User Menu */}
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-700">
-                  {/* TODO: Get from user context/token */}
-                  Lietotājs
+                  {user?.username || 'Lietotājs'}
                 </span>
-                {selectedCarId && (
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                    {userCars.find(car => car.carId === selectedCarId)?.role || ''}
-                  </span>
-                )}
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={handleLogout}
                 >
@@ -90,11 +113,10 @@ export default function Layout({ children }: LayoutProps) {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      location.pathname === item.path
+                    className={`flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === item.path
                         ? 'bg-blue-100 text-blue-700'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
+                      }`}
                   >
                     <span>{item.icon}</span>
                     <span>{item.label}</span>

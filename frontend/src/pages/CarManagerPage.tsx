@@ -1,28 +1,24 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-
-interface UserCar {
-  carId: number
-  brand: string
-  model: string
-  year: number
-  licensePlate: string
-  vin: string
-  role: 'MASTER_OWNER' | 'OWNER' | 'VIEWER'
-  assignedAt: string
-}
+import { useCarContext } from '@/contexts/CarContext'
 
 export default function CarManagerPage() {
-  const [userCars] = useState<UserCar[]>([])
-  const [selectedCarId, setSelectedCarId] = useState<number | null>(null)
+  const { userCars, selectedCarId, setSelectedCarId } = useCarContext()
   const [newInviteEmail, setNewInviteEmail] = useState('')
   const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'VIEWER'>('VIEWER')
 
-  // TODO: Load user's cars from API
-  // TODO: Load car users when car is selected
-  
   const selectedCar = userCars.find(car => car.carId === selectedCarId)
-  const canInviteUsers = selectedCar?.role === 'MASTER_OWNER' || selectedCar?.role === 'OWNER'
+
+  // For now, we'll assume all users have viewer access since we don't have role in Users2Car yet
+  // You can add a Role field to Users2Car table later
+  const canInviteUsers = true // Can be updated when role system is implemented
+
+  const handleInvite = () => {
+    // TODO: Implement API call to send invite
+    console.log('Sending invite to:', newInviteEmail, 'with role:', newInviteRole, 'for car:', selectedCarId)
+    alert(`Uzaicinājuma funkcionalitāte tiks pievienota nākotnē.\nE-pasts: ${newInviteEmail}\nLoma: ${newInviteRole}`)
+    setNewInviteEmail('')
+  }
 
   return (
     <div>
@@ -41,13 +37,12 @@ export default function CarManagerPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {userCars.map((car) => (
-                  <div 
+                  <div
                     key={car.carId}
-                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                      selectedCarId === car.carId 
-                        ? 'border-blue-500 bg-blue-50' 
+                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${selectedCarId === car.carId
+                        ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                     onClick={() => setSelectedCarId(car.carId)}
                   >
                     <div className="flex items-center justify-between mb-3">
@@ -55,16 +50,13 @@ export default function CarManagerPage() {
                       <span className="text-sm text-gray-500">{car.licensePlate}</span>
                     </div>
                     <div className="space-y-2 text-sm text-gray-600">
-                      <div>VIN: {car.vin}</div>
+                      <div>VIN: {car.vin || 'Nav norādīts'}</div>
                       <div>Gads: {car.year}</div>
-                      <div className="flex items-center justify-between">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          car.role === 'MASTER_OWNER' ? 'bg-purple-100 text-purple-800' :
-                          car.role === 'OWNER' ? 'bg-blue-100 text-blue-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {car.role === 'MASTER_OWNER' ? 'Galvenais īpašnieks' :
-                           car.role === 'OWNER' ? 'Īpašnieks' : 'Skatītājs'}
+                      <div>Krāsa: {car.color || 'Nav norādīta'}</div>
+                      <div>Nobraukums: {car.mileage.toLocaleString()} km</div>
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-xs text-gray-500">
+                          Pievienots: {car.assignedAt ? new Date(car.assignedAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
                         </span>
                       </div>
                     </div>
@@ -76,69 +68,19 @@ export default function CarManagerPage() {
         </div>
 
         {/* Access Management Section */}
-        {selectedCarId && (
+        {selectedCarId && selectedCar && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Piekļuves pārvaldība</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Pārvaldīt lietotājus, kuriem ir piekļuve auto: {selectedCar?.brand} {selectedCar?.model} ({selectedCar?.licensePlate})
+                Pārvaldīt lietotājus, kuriem ir piekļuve auto: {selectedCar.brand} {selectedCar.model} ({selectedCar.licensePlate})
               </p>
             </div>
-            
+
             <div className="p-6">
-
-            {/* Current Access */}
-            <div className="mb-6">
-              <h3 className="text-md font-semibold text-gray-900 mb-3">Pašreizējā piekļuve</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-blue-600 font-semibold text-sm">IF</span>
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">IF Apdrošināšana</div>
-                      <div className="text-sm text-gray-600">Pilna piekļuve datiem</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                      Aktīva
-                    </span>
-                    <button className="text-red-600 hover:text-red-800 text-sm">
-                      Noņemt
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-green-600 font-semibold text-sm">BT</span>
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">Baltijas Apdrošināšana</div>
-                      <div className="text-sm text-gray-600">Ierobežota piekļuve</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                      Gaidošs
-                    </span>
-                    <button className="text-blue-600 hover:text-blue-800 text-sm">
-                      Apstiprināt
-                    </button>
-                    <button className="text-red-600 hover:text-red-800 text-sm">
-                      Noraidīt
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
               {/* Add New Access */}
               {canInviteUsers && (
-                <div>
+                <div className="mb-6">
                   <h3 className="text-md font-semibold text-gray-900 mb-3">Uzaicināt jaunu lietotāju</h3>
                   <div className="flex space-x-4">
                     <input
@@ -148,22 +90,16 @@ export default function CarManagerPage() {
                       onChange={(e) => setNewInviteEmail(e.target.value)}
                       className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
-                    <select 
-                      value={newInviteRole} 
+                    <select
+                      value={newInviteRole}
                       onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'VIEWER')}
                       className="border border-gray-300 rounded-md px-3 py-2"
                     >
-                      {selectedCar?.role === 'MASTER_OWNER' && (
-                        <option value="OWNER">Īpašnieks</option>
-                      )}
+                      <option value="OWNER">Īpašnieks</option>
                       <option value="VIEWER">Skatītājs</option>
                     </select>
-                    <Button 
-                      onClick={() => {
-                        // TODO: Send invite API call
-                        console.log('Sending invite to:', newInviteEmail, 'with role:', newInviteRole)
-                        setNewInviteEmail('')
-                      }}
+                    <Button
+                      onClick={handleInvite}
                       disabled={!newInviteEmail}
                     >
                       Uzaicināt
@@ -175,11 +111,67 @@ export default function CarManagerPage() {
                 </div>
               )}
 
-              {/* Current Users List - TODO: Implement */}
+              {/* Current Users List */}
               <div className="mb-6">
                 <h3 className="text-md font-semibold text-gray-900 mb-3">Pašreizējie lietotāji</h3>
-                <div className="text-gray-500 text-sm">
-                  Lietotāju saraksts tiks pievienots pēc API integrācijas.
+                <div className="space-y-3">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-600">
+                      Lietotāju pārvaldības funkcionalitāte tiks pievienota nākotnē.
+                    </p>
+                    {/* <p className="text-sm text-gray-600 mt-2">
+                      Lai to īstenotu, ir nepieciešams:
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
+                      <li>Pievienot Role lauku Users2Car tabulā</li>
+                      <li>Izveidot API endpoint lietotāju uzaicinājumiem</li>
+                      <li>Izveidot API endpoint esošo lietotāju sarakstam</li>
+                      <li>Izveidot paziņojumu sistēmu uzaicinājumiem</li>
+                    </ul> */}
+                  </div>
+                </div>
+              </div>
+
+              {/* Car Details */}
+              <div>
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Mašīnas detaļas</h3>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Marka:</span>
+                      <p className="text-sm text-gray-900">{selectedCar.brand}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Modelis:</span>
+                      <p className="text-sm text-gray-900">{selectedCar.model}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Gads:</span>
+                      <p className="text-sm text-gray-900">{selectedCar.year}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Numurzīme:</span>
+                      <p className="text-sm text-gray-900">{selectedCar.licensePlate}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">VIN:</span>
+                      <p className="text-sm text-gray-900">{selectedCar.vin || 'Nav norādīts'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Krāsa:</span>
+                      <p className="text-sm text-gray-900">{selectedCar.color || 'Nav norādīta'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Nobraukums:</span>
+                      <p className="text-sm text-gray-900">{selectedCar.mileage.toLocaleString()} km</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Pievienots:</span>
+                      <p className="text-sm text-gray-900">
+                        {selectedCar.assignedAt ? new Date(selectedCar.assignedAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
