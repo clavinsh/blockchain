@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using backend.Models;
 using backend.Services;
+using backend.Services.Fabric;
 
 // Prevent default claim type mapping
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -64,6 +65,16 @@ builder.Services.AddAuthorization();
 // Register services
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<CarService>();
+
+
+builder.Services.AddHttpClient<FabricClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["FabricGateway:BaseUrl"]
+            ?? "http://localhost:3001");
+
+    client.Timeout = TimeSpan.FromSeconds(90);
+});
+
 
 var app = builder.Build();
 
