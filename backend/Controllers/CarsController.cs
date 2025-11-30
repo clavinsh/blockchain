@@ -150,4 +150,151 @@ public class CarsController : ControllerBase
             });
         }
     }
+
+    [HttpPost]
+    public async Task<ActionResult<CreateCarResponse>> CreateCar([FromBody] CreateCarRequest request)
+    {
+        try
+        {
+            // Extract user ID from JWT token
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new CreateCarResponse
+                {
+                    Success = false,
+                    Message = "Nederīgs autentifikācijas tokens"
+                });
+            }
+
+            var carId = await _carService.CreateCarAsync(request, userId);
+
+            return Ok(new CreateCarResponse
+            {
+                Success = true,
+                Message = "Mašīna izveidota veiksmīgi",
+                CarId = carId
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating car");
+            return StatusCode(500, new CreateCarResponse
+            {
+                Success = false,
+                Message = "Servera kļūda"
+            });
+        }
+    }
+
+    [HttpPut("{carId}")]
+    public async Task<ActionResult<UpdateCarResponse>> UpdateCar(int carId, [FromBody] UpdateCarRequest request)
+    {
+        try
+        {
+            // Extract user ID from JWT token
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new UpdateCarResponse
+                {
+                    Success = false,
+                    Message = "Nederīgs autentifikācijas tokens"
+                });
+            }
+
+            // Check if user has access to this car
+            var hasAccess = await _carService.UserHasAccessToCarAsync(userId, carId);
+            if (!hasAccess)
+            {
+                return Forbid();
+            }
+
+            var success = await _carService.UpdateCarAsync(carId, request);
+
+            if (!success)
+            {
+                return NotFound(new UpdateCarResponse
+                {
+                    Success = false,
+                    Message = "Mašīna nav atrasta"
+                });
+            }
+
+            return Ok(new UpdateCarResponse
+            {
+                Success = true,
+                Message = "Mašīna atjaunināta veiksmīgi"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating car {CarId}", carId);
+            return StatusCode(500, new UpdateCarResponse
+            {
+                Success = false,
+                Message = "Servera kļūda"
+            });
+        }
+    }
+
+    [HttpDelete("{carId}")]
+    public async Task<ActionResult<DeleteCarResponse>> DeleteCar(int carId)
+    {
+        try
+        {
+            // Extract user ID from JWT token
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new DeleteCarResponse
+                {
+                    Success = false,
+                    Message = "Nederīgs autentifikācijas tokens"
+                });
+            }
+
+            // Check if user has access to this car
+            var hasAccess = await _carService.UserHasAccessToCarAsync(userId, carId);
+            if (!hasAccess)
+            {
+                return Forbid();
+            }
+
+            var success = await _carService.DeleteCarAsync(carId);
+
+            if (!success)
+            {
+                return NotFound(new DeleteCarResponse
+                {
+                    Success = false,
+                    Message = "Mašīna nav atrasta"
+                });
+            }
+
+            return Ok(new DeleteCarResponse
+            {
+                Success = true,
+                Message = "Mašīna dzēsta veiksmīgi"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting car {CarId}", carId);
+            return StatusCode(500, new DeleteCarResponse
+            {
+                Success = false,
+                Message = "Servera kļūda"
+            });
+        }
+    }
 }
