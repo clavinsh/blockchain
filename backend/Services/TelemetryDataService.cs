@@ -1,5 +1,8 @@
 namespace backend.Services;
 
+using System.Text.Json;
+using backend.DTOs;
+
 /// <summary>
 /// Generates driving behavior reports for insurance and resale purposes
 /// </summary>
