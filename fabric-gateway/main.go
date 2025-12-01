@@ -7,8 +7,8 @@ import (
     "syscall"
 
     "github.com/gin-gonic/gin"
-    "github.com/yourusername/insurance-ubi/fabric-gateway/fabric"
-    "github.com/yourusername/insurance-ubi/fabric-gateway/handlers"
+    "fabric-gateway/fabric"
+    "fabric-gateway/handlers"
 )
 
 func main() {
@@ -20,7 +20,6 @@ func main() {
 
     router := gin.Default()
 	
-	// TODO: temp solution for local testing
     router.Use(func(c *gin.Context) {
         c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
         c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -63,7 +62,7 @@ func main() {
         sigChan := make(chan os.Signal, 1)
         signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
         <-sigChan
-        log.Println("Shutting down...")
+        log.Println("Shutting down gracefully...")
         os.Exit(0)
     }()
 
@@ -72,7 +71,7 @@ func main() {
         port = "3001"
     }
 
-    log.Printf("Fabric Gateway API running on port %s", port)
+    log.Printf("🚀 Fabric Gateway API running on port %s", port)
     if err := router.Run(":" + port); err != nil {
         log.Fatalf("Failed to start server: %v", err)
     }

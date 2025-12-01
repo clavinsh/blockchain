@@ -1,4 +1,4 @@
-module github.com/yourusername/insurance-ubi/fabric-gateway
+module fabric-gateway
 
 go 1.25.4
 

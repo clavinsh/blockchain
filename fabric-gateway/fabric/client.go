@@ -3,8 +3,8 @@ package fabric
 import (
     "fmt"
     "log"
-    "os"
     "path/filepath"
+	"os"
 
     "github.com/hyperledger/fabric-sdk-go/pkg/core/config"
     "github.com/hyperledger/fabric-sdk-go/pkg/gateway"
@@ -17,7 +17,11 @@ type Client struct {
 }
 
 func NewClient(channelName, chaincodeName string) (*Client, error) {
-    ccpPath := filepath.Join("..", "network", "connection-org1.yaml")
+    ccpPath := filepath.Join("config", "connection-org1.yaml")
+    
+    if _, err := os.Stat(ccpPath); os.IsNotExist(err) {
+        return nil, fmt.Errorf("connection profile not found at %s - did you copy it from test-network?", ccpPath)
+    }
     
     walletPath := "wallet"
     wallet, err := gateway.NewFileSystemWallet(walletPath)
@@ -26,7 +30,7 @@ func NewClient(channelName, chaincodeName string) (*Client, error) {
     }
 
     if !wallet.Exists("admin") {
-        return nil, fmt.Errorf("admin identity not found in wallet")
+        return nil, fmt.Errorf("admin identity not found in wallet at %s - run setup script first", walletPath)
     }
 
     gw, err := gateway.Connect(
@@ -40,12 +44,12 @@ func NewClient(channelName, chaincodeName string) (*Client, error) {
     network, err := gw.GetNetwork(channelName)
     if err != nil {
         gw.Close()
-        return nil, fmt.Errorf("failed to get network: %w", err)
+        return nil, fmt.Errorf("failed to get network %s: %w", channelName, err)
     }
 
     contract := network.GetContract(chaincodeName)
 
-    log.Printf("✅ Connected to Fabric network: channel=%s, chaincode=%s", channelName, chaincodeName)
+    log.Printf("Connected to Fabric network: channel=%s, chaincode=%s", channelName, chaincodeName)
 
     return &Client{
         gateway:  gw,
@@ -55,23 +59,31 @@ func NewClient(channelName, chaincodeName string) (*Client, error) {
 }
 
 func (c *Client) SubmitTransaction(funcName string, args ...string) (string, error) {
+    log.Printf("Submitting transaction: %s with %d args", funcName, len(args))
+    
     result, err := c.contract.SubmitTransaction(funcName, args...)
     if err != nil {
-        return "", fmt.Errorf("failed to submit transaction: %w", err)
+        return "", fmt.Errorf("failed to submit transaction %s: %w", funcName, err)
     }
+    
+    log.Printf("Transaction %s submitted successfully", funcName)
     return string(result), nil
 }
 
 func (c *Client) EvaluateTransaction(funcName string, args ...string) (string, error) {
+    log.Printf("Evaluating transaction: %s with %d args", funcName, len(args))
+    
     result, err := c.contract.EvaluateTransaction(funcName, args...)
     if err != nil {
-        return "", fmt.Errorf("failed to evaluate transaction: %w", err)
+        return "", fmt.Errorf("failed to evaluate transaction %s: %w", funcName, err)
     }
+    
     return string(result), nil
 }
 
 func (c *Client) Close() {
     if c.gateway != nil {
+        log.Println("Closing Fabric gateway connection")
         c.gateway.Close()
     }
 }

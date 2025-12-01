@@ -5,8 +5,8 @@ import (
     "net/http"
 
     "github.com/gin-gonic/gin"
-    "github.com/yourusername/insurance-ubi/fabric-gateway/fabric"
-    "github.com/yourusername/insurance-ubi/fabric-gateway/models"
+    "fabric-gateway/fabric"
+    "fabric-gateway/models"
 )
 
 type AccessHandler struct {
