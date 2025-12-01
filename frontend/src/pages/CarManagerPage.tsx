@@ -1,23 +1,100 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useCarContext } from '@/contexts/CarContext'
+import { inviteApi, carApi, type InviteResponse, type CarUser } from '@/services/api'
 
 export default function CarManagerPage() {
   const { userCars, selectedCarId, setSelectedCarId } = useCarContext()
   const [newInviteEmail, setNewInviteEmail] = useState('')
-  const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'VIEWER'>('VIEWER')
+  const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'DRIVER'>('DRIVER')
+  const [sentInvites, setSentInvites] = useState<InviteResponse[]>([])
+  const [carUsers, setCarUsers] = useState<CarUser[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   const selectedCar = userCars.find(car => car.carId === selectedCarId)
 
-  // For now, we'll assume all users have viewer access since we don't have role in Users2Car yet
-  // You can add a Role field to Users2Car table later
-  const canInviteUsers = true // Can be updated when role system is implemented
+  // Check if current user is an OWNER of the selected car
+  const isOwner = selectedCar?.roleCode === 'OWNER'
+  const canInviteUsers = isOwner
 
-  const handleInvite = () => {
-    // TODO: Implement API call to send invite
-    console.log('Sending invite to:', newInviteEmail, 'with role:', newInviteRole, 'for car:', selectedCarId)
-    alert(`Uzaicinājuma funkcionalitāte tiks pievienota nākotnē.\nE-pasts: ${newInviteEmail}\nLoma: ${newInviteRole}`)
-    setNewInviteEmail('')
+  const loadSentInvites = async () => {
+    if (!selectedCarId) return
+
+    try {
+      const invites = await inviteApi.getSentInvites()
+      const carInvites = invites.filter(invite => invite.carId === selectedCarId)
+      setSentInvites(carInvites)
+    } catch (err) {
+      console.error('Failed to load sent invites:', err)
+    }
+  }
+
+  const loadCarUsers = async () => {
+    if (!selectedCarId) return
+
+    try {
+      const users = await carApi.getCarUsers(selectedCarId)
+      setCarUsers(users)
+    } catch (err) {
+      console.error('Failed to load car users:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedCarId) {
+      loadSentInvites()
+      loadCarUsers()
+    }
+  }, [selectedCarId])
+
+  const handleInvite = async () => {
+    if (!selectedCarId || !newInviteEmail) return
+
+    setIsLoading(true)
+
+    try {
+      const response = await inviteApi.createInvite({
+        carId: selectedCarId,
+        invitedUserEmail: newInviteEmail,
+        roleCode: newInviteRole,
+      })
+
+      if (response.success) {
+        alert(`Uzaicinājums nosūtīts lietotājam ${newInviteEmail}!`)
+        setNewInviteEmail('')
+        loadSentInvites()
+      }
+    } catch (err: any) {
+      alert(err.message || 'Neizdevās nosūtīt uzaicinājumu')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCancelInvite = async (inviteId: number) => {
+    if (!confirm('Vai tiešām vēlaties atcelt šo uzaicinājumu?')) return
+
+    try {
+      await inviteApi.cancelInvite(inviteId)
+      alert('Uzaicinājums atcelts')
+      loadSentInvites()
+    } catch (err: any) {
+      alert(err.message || 'Neizdevās atcelt uzaicinājumu')
+    }
+  }
+
+  const handleRemoveUser = async (userCarId: number, username: string) => {
+    if (!confirm(`Vai tiešām vēlaties noņemt lietotāja "${username}" piekļuvi šai mašīnai?`)) return
+
+    if (!selectedCarId) return
+
+    try {
+      await carApi.removeCarUser(selectedCarId, userCarId)
+      alert('Lietotāja piekļuve noņemta')
+      loadCarUsers()
+    } catch (err: any) {
+      alert(err.message || 'Neizdevās noņemt lietotāja piekļuvi')
+    }
   }
 
   return (
@@ -92,17 +169,17 @@ export default function CarManagerPage() {
                     />
                     <select
                       value={newInviteRole}
-                      onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'VIEWER')}
+                      onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'DRIVER')}
                       className="border border-gray-300 rounded-md px-3 py-2"
                     >
                       <option value="OWNER">Īpašnieks</option>
-                      <option value="VIEWER">Skatītājs</option>
+                      <option value="DRIVER">Vadītājs</option>
                     </select>
                     <Button
                       onClick={handleInvite}
-                      disabled={!newInviteEmail}
+                      disabled={!newInviteEmail || isLoading}
                     >
-                      Uzaicināt
+                      {isLoading ? 'Sūta...' : 'Uzaicināt'}
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
@@ -111,24 +188,100 @@ export default function CarManagerPage() {
                 </div>
               )}
 
-              {/* Current Users List */}
+              {/* Current Users */}
               <div className="mb-6">
                 <h3 className="text-md font-semibold text-gray-900 mb-3">Pašreizējie lietotāji</h3>
                 <div className="space-y-3">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">
-                      Lietotāju pārvaldības funkcionalitāte tiks pievienota nākotnē.
-                    </p>
-                    {/* <p className="text-sm text-gray-600 mt-2">
-                      Lai to īstenotu, ir nepieciešams:
-                    </p>
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
-                      <li>Pievienot Role lauku Users2Car tabulā</li>
-                      <li>Izveidot API endpoint lietotāju uzaicinājumiem</li>
-                      <li>Izveidot API endpoint esošo lietotāju sarakstam</li>
-                      <li>Izveidot paziņojumu sistēmu uzaicinājumiem</li>
-                    </ul> */}
-                  </div>
+                  {carUsers.length === 0 ? (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">
+                        Nav lietotāju ar piekļuvi šai mašīnai.
+                      </p>
+                    </div>
+                  ) : (
+                    carUsers.map((user) => (
+                      <div key={user.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-gray-900">
+                                {user.username} ({user.email})
+                              </span>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                user.roleCode === 'OWNER' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {user.roleCode === 'OWNER' ? 'Īpašnieks' : 'Vadītājs'}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              {user.firstName && user.lastName && `${user.firstName} ${user.lastName} • `}
+                              Pievienots: {user.assignedAt ? new Date(user.assignedAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
+                            </div>
+                          </div>
+                          {isOwner && (
+                            <Button
+                              onClick={() => handleRemoveUser(user.id, user.username)}
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              Noņemt
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Sent Invites */}
+              <div className="mb-6">
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Nosūtītie uzaicinājumi</h3>
+                <div className="space-y-3">
+                  {sentInvites.length === 0 ? (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">
+                        Nav nosūtītu uzaicinājumu šai mašīnai.
+                      </p>
+                    </div>
+                  ) : (
+                    sentInvites.map((invite) => (
+                      <div key={invite.inviteId} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-gray-900">{invite.invitedEmail}</span>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                invite.inviteStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                invite.inviteStatus === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
+                                invite.inviteStatus === 'DECLINED' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {invite.inviteStatus === 'PENDING' ? 'Gaida' :
+                                 invite.inviteStatus === 'ACCEPTED' ? 'Pieņemts' :
+                                 invite.inviteStatus === 'DECLINED' ? 'Noraidīts' :
+                                 'Atcelts'}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              Loma: {invite.roleCode === 'OWNER' ? 'Īpašnieks' : 'Vadītājs'} •
+                              Nosūtīts: {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
+                            </div>
+                          </div>
+                          {invite.inviteStatus === 'PENDING' && isOwner && (
+                            <Button
+                              onClick={() => handleCancelInvite(invite.inviteId)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Atcelt
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 

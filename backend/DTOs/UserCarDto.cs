@@ -11,4 +11,5 @@ public class UserCarDto
     public string? Color { get; set; }
     public int Mileage { get; set; }
     public DateTime? AssignedAt { get; set; }
+    public string RoleCode { get; set; } = string.Empty;
 }

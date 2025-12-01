@@ -18,4 +18,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.10" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Services/TelemetryDataService.cs" />
+  </ItemGroup>
 </Project>
