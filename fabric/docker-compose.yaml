@@ -1,0 +1,46 @@
+version: '3.8'
+
+networks:
+  fabric-test:
+    name: fabric-test
+
+services:
+  orderer.example.com:
+    extends:
+      file: network/docker/docker-compose.yaml
+      service: orderer.example.com
+
+  peer0.org1.example.com:
+    extends:
+      file: network/docker/docker-compose.yaml
+      service: peer0.org1.example.com
+
+  peer0.org2.example.com:
+    extends:
+      file: network/docker/docker-compose.yaml
+      service: peer0.org2.example.com
+
+  cli:
+    extends:
+      file: network/docker/docker-compose.yaml
+      service: cli
+
+  fabric-gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: fabric-gateway
+    environment:
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./network:/fabric-network:ro
+    networks:
+      - fabric-test
+    depends_on:
+      - peer0.org1.example.com
+      - peer0.org2.example.com
+      - orderer.example.com
+    restart: unless-stopped
+
