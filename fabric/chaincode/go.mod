@@ -1,4 +1,4 @@
-module github.com/insurance-ubi/chaincode
+module chaincode
 
 go 1.25.4
 
