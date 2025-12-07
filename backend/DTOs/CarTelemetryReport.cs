@@ -3,7 +3,6 @@ namespace backend.DTOs;
 public class DrivingReport
 {
     public string CarId { get; set; }
-    public string DriverName { get; set; }
     public DateTime ReportGeneratedAt { get; set; }
     public DateRange AnalysisPeriod { get; set; }
     public BasicStatistics BasicStatistics { get; set; }
@@ -75,7 +74,6 @@ public class VehicleWearEstimate
 
 public class InsuranceSummary
 {
-    public string DriverName { get; set; }
     public string VehicleId { get; set; }
     public DateRange AnalysisPeriod { get; set; }
     public double DrivingScore { get; set; }
