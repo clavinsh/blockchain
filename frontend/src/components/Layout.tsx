@@ -52,7 +52,8 @@ export default function Layout({ children }: LayoutProps) {
   const navigationItems = [
     { path: '/dashboard', label: 'Galvenā panelis', icon: '📊' },
     { path: '/analyzed-data', label: 'Analizētie dati', icon: '📈' },
-    { path: '/car-manager', label: 'Mašīnu pārvaldība', icon: '🚗' }
+    { path: '/car-manager', label: 'Mašīnu pārvaldība', icon: '🚗' },
+    { path: '/invitations', label: 'Uzaicinājumi', icon: '✉️' }
   ]
 
   return (

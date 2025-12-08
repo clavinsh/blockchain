@@ -32,7 +32,8 @@ public class CarService
                     Vin = u2c.Car.Vin,
                     Color = u2c.Car.Color,
                     Mileage = u2c.Car.Mileage ?? 0,
-                    AssignedAt = u2c.AssignedAt
+                    AssignedAt = u2c.AssignedAt,
+                    RoleCode = u2c.RoleCode
                 })
                 .ToListAsync();
 
