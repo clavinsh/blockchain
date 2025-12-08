@@ -1,29 +1,48 @@
 namespace backend.Services;
 
+using backend.DTOs;
+using backend.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+
 /// <summary>
 /// Generates driving behavior reports for insurance and resale purposes
 /// </summary>
-public class DrivingReportGenerator
+public class TelemetryDataService
 {
+    private readonly BlockchainDbContext _context;
+
     // Thresholds for analysis
     private const double HARSH_BRAKING_THRESHOLD = -0.3;  // g-force
     private const double HARSH_ACCELERATION_THRESHOLD = 0.3;  // g-force
     private const double HARSH_CORNERING_THRESHOLD = 0.25;  // g-force
     private const double SPEEDING_THRESHOLD_URBAN = 50.0;  // km/h
-    private const double SPEEDING_THRESHOLD_HIGHWAY = 130.0;  // km/h
-    private const double SMOOTH_DRIVING_SCORE_THRESHOLD = 80.0;
 
-    public DrivingReport GenerateReport(List<VehicleSensorData> telemetryData, string carId, string driverName = null)
+    public TelemetryDataService(BlockchainDbContext context)
     {
+        _context = context;
+    }
+
+    /// <summary>
+    /// Generate a comprehensive driving behavior report for a specific car and time period
+    /// </summary>
+    /// <param name="carId">The car identifier</param>
+    /// <param name="from">Start date of the analysis period</param>
+    /// <param name="to">End date of the analysis period</param>
+    /// <param name="driverName">Optional driver name for the report</param>
+    /// <returns>Complete driving behavior report</returns>
+    public async Task<DrivingReport> GenerateReportAsync(int carId, DateTime from, DateTime to)
+    {
+        var telemetryData = await FetchTelemetryDataAsync(carId, from, to);
+        
         if (telemetryData == null || !telemetryData.Any())
         {
-            throw new ArgumentException("Telemetry data cannot be empty");
+            throw new ArgumentException("No telemetry data found for the specified period");
         }
 
         var report = new DrivingReport
         {
-            CarId = carId,
-            DriverName = driverName,
+            CarId = carId.ToString(),
             ReportGeneratedAt = DateTime.UtcNow,
             AnalysisPeriod = new DateRange
             {
@@ -51,6 +70,139 @@ public class DrivingReportGenerator
         report.Recommendations = GenerateRecommendations(report);
 
         return report;
+    }
+
+    /// <summary>
+    /// Generate a summary suitable for insurance companies
+    /// </summary>
+    /// <param name="carId">The car identifier</param>
+    /// <param name="from">Start date of the analysis period</param>
+    /// <param name="to">End date of the analysis period</param>
+    /// <param name="driverName">Optional driver name for the report</param>
+    /// <returns>Insurance summary report</returns>
+    public async Task<InsuranceSummary> GenerateInsuranceSummaryAsync(int carId, DateTime from, DateTime to)
+    {
+        var report = await GenerateReportAsync(carId, from, to);
+        
+        return new InsuranceSummary
+        {
+            VehicleId = report.CarId,
+            AnalysisPeriod = report.AnalysisPeriod,
+            DrivingScore = report.OverallDrivingScore,
+            RiskLevel = report.RiskAssessment.OverallRiskLevel,
+            RecommendedPremiumMultiplier = report.RiskAssessment.InsurancePremiumMultiplier,
+            SafetyIncidents = report.DrivingBehavior.HarshBrakingEvents.Count +
+                            report.DrivingBehavior.HarshAccelerationEvents.Count +
+                            report.DrivingBehavior.SpeedingEvents.Count,
+            TotalDistance = report.BasicStatistics.TotalDistance,
+            SmoothDrivingPercentage = report.DrivingBehavior.SmoothDrivingPercentage
+        };
+    }
+
+    /// <summary>
+    /// Generate a summary suitable for car resellers
+    /// </summary>
+    /// <param name="carId">The car identifier</param>
+    /// <param name="from">Start date of the analysis period</param>
+    /// <param name="to">End date of the analysis period</param>
+    /// <returns>Reseller summary report</returns>
+    public async Task<ResellerSummary> GenerateResellerSummaryAsync(int carId, DateTime from, DateTime to)
+    {
+        var report = await GenerateReportAsync(carId, from, to);
+        
+        return new ResellerSummary
+        {
+            VehicleId = report.CarId,
+            AnalysisPeriod = report.AnalysisPeriod,
+            TotalDistance = report.BasicStatistics.TotalDistance,
+            DrivingScore = report.OverallDrivingScore,
+            VehicleConditionRating = DetermineConditionRating(report.OverallDrivingScore),
+            EstimatedDepreciationRate = report.RiskAssessment.VehicleDepreciationRate,
+            BrakeCondition = report.VehicleWearEstimate.BrakeWearLevel,
+            EngineCondition = report.VehicleWearEstimate.EngineWearLevel,
+            TireCondition = report.VehicleWearEstimate.TireWearLevel,
+            EstimatedMaintenanceCost = report.VehicleWearEstimate.EstimatedMaintenanceCost,
+            RecommendedActions = report.Recommendations
+        };
+    }
+
+    /// <summary>
+    /// Get route data (GPS coordinates and speed) for displaying on a map
+    /// </summary>
+    /// <param name="carId">The car identifier</param>
+    /// <param name="from">Start date of the period</param>
+    /// <param name="to">End date of the period</param>
+    /// <returns>Route data with GPS points and speed information</returns>
+    public async Task<RouteData> GetRouteDataAsync(int carId, DateTime from, DateTime to)
+    {
+        var telemetryData = await FetchTelemetryDataAsync(carId, from, to);
+        
+        if (telemetryData == null || !telemetryData.Any())
+        {
+            throw new ArgumentException("No route data found for the specified period");
+        }
+
+        var routePoints = telemetryData
+            .OrderBy(d => d.Timestamp)
+            .Select(d => new RoutePoint
+            {
+                Timestamp = d.Timestamp,
+                Latitude = d.Latitude,
+                Longitude = d.Longitude,
+                Altitude = d.Altitude,
+                SpeedKmh = d.SpeedKmh
+            })
+            .ToList();
+
+        return new RouteData
+        {
+            CarId = carId,
+            StartTime = routePoints.First().Timestamp,
+            EndTime = routePoints.Last().Timestamp,
+            TotalPoints = routePoints.Count,
+            Points = routePoints
+        };
+    }
+
+    /// <summary>
+    /// Fetches telemetry data from CarDataCache table for a specific car within the specified time period
+    /// </summary>
+    /// <param name="carId">The car identifier</param>
+    /// <param name="from">Start date of the period</param>
+    /// <param name="to">End date of the period</param>
+    /// <returns>List of vehicle sensor data within the specified period</returns>
+    private async Task<List<VehicleSensorData>> FetchTelemetryDataAsync(int carId, DateTime from, DateTime to)
+    {
+        // Fetch data from CarDataCache where InsertTime is between from and to
+        var cacheEntries = await _context.CarDataCaches
+            .Where(c => c.CarId == carId 
+                     && c.InsertTime >= from 
+                     && c.InsertTime <= to
+                     && c.DeleteTime == null) // Only fetch non-deleted entries
+            .OrderBy(c => c.InsertTime)
+            .ToListAsync();
+
+        var telemetryDataList = new List<VehicleSensorData>();
+
+        // Deserialize the JSON data from each cache entry
+        foreach (var entry in cacheEntries)
+        {
+            try
+            {
+                var sensorData = JsonSerializer.Deserialize<VehicleSensorData>(entry.CarData);
+                if (sensorData != null)
+                {
+                    telemetryDataList.Add(sensorData);
+                }
+            }
+            catch (JsonException ex)
+            {
+                // Log the error but continue processing other entries
+                Console.WriteLine($"Failed to deserialize data for CarDataCache ID {entry.Id}: {ex.Message}");
+            }
+        }
+
+        return telemetryDataList;
     }
 
     private BasicStatistics CalculateBasicStatistics(List<VehicleSensorData> data)
@@ -241,36 +393,36 @@ public class DrivingReportGenerator
 
         if (report.DrivingBehavior.HarshBrakingEvents.Count > 10)
         {
-            recommendations.Add("🚗 Reduce harsh braking by maintaining safe following distance and anticipating traffic");
+            recommendations.Add("Reduce harsh braking by maintaining safe following distance and anticipating traffic");
         }
 
         if (report.DrivingBehavior.HarshAccelerationEvents.Count > 15)
         {
-            recommendations.Add("⚡ Practice gradual acceleration to improve fuel efficiency and reduce wear");
+            recommendations.Add("Practice gradual acceleration to improve fuel efficiency and reduce wear");
         }
 
         if (report.DrivingBehavior.SpeedingEvents.Count > 5)
         {
-            recommendations.Add("🚦 Adhere to speed limits to reduce accident risk and insurance costs");
+            recommendations.Add("Adhere to speed limits to reduce accident risk and insurance costs");
         }
 
         if (report.DrivingBehavior.OverRevvingEvents.Count > 20)
         {
-            recommendations.Add("🔧 Shift gears earlier to reduce engine stress and improve longevity");
+            recommendations.Add("Shift gears earlier to reduce engine stress and improve longevity");
         }
 
         if (report.OverallDrivingScore >= 90)
         {
-            recommendations.Add("⭐ Excellent driving! You may qualify for reduced insurance premiums");
+            recommendations.Add("Excellent driving! You may qualify for reduced insurance premiums");
         }
         else if (report.OverallDrivingScore < 70)
         {
-            recommendations.Add("📚 Consider taking a defensive driving course to improve safety and reduce costs");
+            recommendations.Add("Consider taking a defensive driving course to improve safety and reduce costs");
         }
 
         if (report.VehicleWearEstimate.BrakeWearLevel > WearLevel.Moderate)
         {
-            recommendations.Add("🔴 Schedule brake inspection - driving patterns indicate elevated wear");
+            recommendations.Add("Schedule brake inspection - driving patterns indicate elevated wear");
         }
 
         return recommendations;
@@ -400,59 +552,6 @@ public class DrivingReportGenerator
         baseCost += behavior.OverRevvingEvents.Count * 2;
 
         return baseCost;
-    }
-
-    /// <summary>
-    /// Export report to JSON
-    /// </summary>
-    public string ExportToJson(DrivingReport report)
-    {
-        return JsonSerializer.Serialize(report, new JsonSerializerOptions 
-        { 
-            WriteIndented = true 
-        });
-    }
-
-    /// <summary>
-    /// Generate a summary suitable for insurance companies
-    /// </summary>
-    public InsuranceSummary GenerateInsuranceSummary(DrivingReport report)
-    {
-        return new InsuranceSummary
-        {
-            DriverName = report.DriverName,
-            VehicleId = report.CarId,
-            AnalysisPeriod = report.AnalysisPeriod,
-            DrivingScore = report.OverallDrivingScore,
-            RiskLevel = report.RiskAssessment.OverallRiskLevel,
-            RecommendedPremiumMultiplier = report.RiskAssessment.InsurancePremiumMultiplier,
-            SafetyIncidents = report.DrivingBehavior.HarshBrakingEvents.Count +
-                            report.DrivingBehavior.HarshAccelerationEvents.Count +
-                            report.DrivingBehavior.SpeedingEvents.Count,
-            TotalDistance = report.BasicStatistics.TotalDistance,
-            SmoothDrivingPercentage = report.DrivingBehavior.SmoothDrivingPercentage
-        };
-    }
-
-    /// <summary>
-    /// Generate a summary suitable for car resellers
-    /// </summary>
-    public ResellerSummary GenerateResellerSummary(DrivingReport report)
-    {
-        return new ResellerSummary
-        {
-            VehicleId = report.CarId,
-            AnalysisPeriod = report.AnalysisPeriod,
-            TotalDistance = report.BasicStatistics.TotalDistance,
-            DrivingScore = report.OverallDrivingScore,
-            VehicleConditionRating = DetermineConditionRating(report.OverallDrivingScore),
-            EstimatedDepreciationRate = report.RiskAssessment.VehicleDepreciationRate,
-            BrakeCondition = report.VehicleWearEstimate.BrakeWearLevel,
-            EngineCondition = report.VehicleWearEstimate.EngineWearLevel,
-            TireCondition = report.VehicleWearEstimate.TireWearLevel,
-            EstimatedMaintenanceCost = report.VehicleWearEstimate.EstimatedMaintenanceCost,
-            RecommendedActions = report.Recommendations
-        };
     }
 
     private string DetermineConditionRating(double score)

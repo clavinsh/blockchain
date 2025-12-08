@@ -64,6 +64,7 @@ builder.Services.AddAuthorization();
 // Register services
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<CarService>();
+builder.Services.AddScoped<TelemetryDataService>();
 
 var app = builder.Build();
 
