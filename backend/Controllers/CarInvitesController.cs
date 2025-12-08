@@ -69,6 +69,16 @@ public class CarInvitesController : ControllerBase
             return Forbid();
         }
 
+        // Only OWNER role can send invites
+        if (userCarRelation.RoleCode != "OWNER")
+        {
+            return StatusCode(403, new InviteActionResponse
+            {
+                Success = false,
+                Message = "Only owners can send invites"
+            });
+        }
+
         // Find the invited user by email
         var invitedUser = await _context.UserTables
             .FirstOrDefaultAsync(u => u.Email == request.InvitedUserEmail);
@@ -200,82 +210,142 @@ public class CarInvitesController : ControllerBase
     [HttpPost("{id}/accept")]
     public async Task<ActionResult<InviteActionResponse>> AcceptInvite(int id)
     {
-        var userId = GetCurrentUserId();
-        if (userId == null)
+        try
         {
-            return Unauthorized(new InviteActionResponse
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
-                Success = false,
-                Message = "Invalid authentication token"
+                return Unauthorized(new InviteActionResponse
+                {
+                    Success = false,
+                    Message = "Invalid authentication token"
+                });
+            }
+
+            var invite = await _context.CarInvites
+                .Include(i => i.Car)
+                .Include(i => i.Inviter)
+                .Include(i => i.InvitedUser)
+                .FirstOrDefaultAsync(i => i.InviteId == id);
+
+            if (invite == null)
+            {
+                return NotFound(new InviteActionResponse
+                {
+                    Success = false,
+                    Message = "Invite not found"
+                });
+            }
+
+            // Verify the current user is the invited user
+            if (invite.InvitedUserId != userId)
+            {
+                return Forbid();
+            }
+
+            // Verify the invite is still pending
+            if (invite.InviteStatus != "PENDING")
+            {
+                return BadRequest(new InviteActionResponse
+                {
+                    Success = false,
+                    Message = $"Invite is already {invite.InviteStatus.ToLower()}"
+                });
+            }
+
+            // Delete any previous accepted/declined invites for this user-car combination to avoid unique constraint violation
+            var oldInvites = await _context.CarInvites
+                .Where(ci => ci.CarId == invite.CarId
+                    && ci.InvitedUserId == invite.InvitedUserId
+                    && ci.InviteId != id
+                    && (ci.InviteStatus == "ACCEPTED" || ci.InviteStatus == "DECLINED"))
+                .ToListAsync();
+
+            if (oldInvites.Any())
+            {
+                _context.CarInvites.RemoveRange(oldInvites);
+                _logger.LogInformation("Removed {Count} old invites for user {UserId} and car {CarId}",
+                    oldInvites.Count, invite.InvitedUserId, invite.CarId);
+            }
+
+            // If the invite is for OWNER role, transfer full ownership
+            if (invite.RoleCode == "OWNER")
+            {
+                // Remove ALL existing user access to this car (including the old owner)
+                var allExistingAccess = await _context.Users2Cars
+                    .Where(uc => uc.CarId == invite.CarId)
+                    .ToListAsync();
+
+                _logger.LogInformation("Transferring ownership for car {CarId}. Removing {Count} existing access entries.",
+                    invite.CarId, allExistingAccess.Count);
+
+                _context.Users2Cars.RemoveRange(allExistingAccess);
+
+                // Add the new owner
+                var newOwnerRelation = new Users2Car
+                {
+                    UserId = invite.InvitedUserId,
+                    CarId = invite.CarId,
+                    RoleCode = "OWNER",
+                    AssignedAt = DateTime.UtcNow
+                };
+
+                _context.Users2Cars.Add(newOwnerRelation);
+
+                _logger.LogInformation("New owner {UserId} added for car {CarId}",
+                    invite.InvitedUserId, invite.CarId);
+            }
+            else
+            {
+                // Check if user already has access to this car (for non-owner invites)
+                var existingAccess = await _context.Users2Cars
+                    .FirstOrDefaultAsync(uc => uc.UserId == invite.InvitedUserId && uc.CarId == invite.CarId);
+
+                if (existingAccess != null)
+                {
+                    return BadRequest(new InviteActionResponse
+                    {
+                        Success = false,
+                        Message = "User already has access to this car"
+                    });
+                }
+
+                // For non-OWNER roles, just add user to car access
+                var userCarRelation = new Users2Car
+                {
+                    UserId = invite.InvitedUserId,
+                    CarId = invite.CarId,
+                    RoleCode = invite.RoleCode,
+                    AssignedAt = DateTime.UtcNow
+                };
+
+                _context.Users2Cars.Add(userCarRelation);
+            }
+
+            // Update invite status
+            invite.InviteStatus = "ACCEPTED";
+            invite.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new InviteActionResponse
+            {
+                Success = true,
+                Message = invite.RoleCode == "OWNER"
+                    ? "Ownership transferred successfully"
+                    : "Invite accepted successfully",
+                Invite = MapToInviteResponse(invite)
             });
         }
-
-        var invite = await _context.CarInvites
-            .Include(i => i.Car)
-            .Include(i => i.Inviter)
-            .Include(i => i.InvitedUser)
-            .FirstOrDefaultAsync(i => i.InviteId == id);
-
-        if (invite == null)
+        catch (Exception ex)
         {
-            return NotFound(new InviteActionResponse
+            _logger.LogError(ex, "Error accepting invite {InviteId}", id);
+            return StatusCode(500, new InviteActionResponse
             {
                 Success = false,
-                Message = "Invite not found"
+                Message = $"Error accepting invite: {ex.Message}"
             });
         }
-
-        // Verify the current user is the invited user
-        if (invite.InvitedUserId != userId)
-        {
-            return Forbid();
-        }
-
-        // Verify the invite is still pending
-        if (invite.InviteStatus != "PENDING")
-        {
-            return BadRequest(new InviteActionResponse
-            {
-                Success = false,
-                Message = $"Invite is already {invite.InviteStatus.ToLower()}"
-            });
-        }
-
-        // Check if user already has access to this car (shouldn't happen, but prevents DB constraint violation)
-        var existingAccess = await _context.Users2Cars
-            .FirstOrDefaultAsync(uc => uc.UserId == invite.InvitedUserId && uc.CarId == invite.CarId);
-
-        if (existingAccess != null)
-        {
-            return BadRequest(new InviteActionResponse
-            {
-                Success = false,
-                Message = "User already has access to this car"
-            });
-        }
-
-        // Update invite status
-        invite.InviteStatus = "ACCEPTED";
-        invite.UpdatedAt = DateTime.UtcNow;
-
-        // Add user to car access
-        var userCarRelation = new Users2Car
-        {
-            UserId = invite.InvitedUserId,
-            CarId = invite.CarId,
-            RoleCode = invite.RoleCode,
-            AssignedAt = DateTime.UtcNow
-        };
-
-        _context.Users2Cars.Add(userCarRelation);
-        await _context.SaveChangesAsync();
-
-        return Ok(new InviteActionResponse
-        {
-            Success = true,
-            Message = "Invite accepted successfully",
-            Invite = MapToInviteResponse(invite)
-        });
     }
 
     [HttpPost("{id}/decline")]
