@@ -1,15 +1,28 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useCarContext } from '@/contexts/CarContext'
-import { inviteApi, carApi, type InviteResponse, type CarUser } from '@/services/api'
+import { inviteApi, carApi, type InviteResponse, type CarUser, type CreateCarRequest } from '@/services/api'
 
 export default function CarManagerPage() {
-  const { userCars, selectedCarId, setSelectedCarId } = useCarContext()
+  const { userCars, selectedCarId, setSelectedCarId, setUserCars } = useCarContext()
   const [newInviteEmail, setNewInviteEmail] = useState('')
   const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'DRIVER'>('DRIVER')
   const [sentInvites, setSentInvites] = useState<InviteResponse[]>([])
   const [carUsers, setCarUsers] = useState<CarUser[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Car creation state
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newCarData, setNewCarData] = useState<CreateCarRequest>({
+    brand: '',
+    model: '',
+    year: new Date().getFullYear(),
+    licensePlate: '',
+    vin: '',
+    color: '',
+    mileage: 0
+  })
+  const [isCreatingCar, setIsCreatingCar] = useState(false)
 
   const selectedCar = userCars.find(car => car.carId === selectedCarId)
 
@@ -97,9 +110,194 @@ export default function CarManagerPage() {
     }
   }
 
+  const handleCreateCar = async () => {
+    if (!newCarData.brand || !newCarData.model) {
+      alert('Lūdzu, aizpildiet obligātos laukus (marka un modelis)')
+      return
+    }
+
+    setIsCreatingCar(true)
+
+    try {
+      const response = await carApi.createCar(newCarData)
+      
+      if (response.success) {
+        alert(`Mašīna "${newCarData.brand} ${newCarData.model}" izveidota veiksmīgi!`)
+        
+        // Reset form
+        setNewCarData({
+          brand: '',
+          model: '',
+          year: new Date().getFullYear(),
+          licensePlate: '',
+          vin: '',
+          color: '',
+          mileage: 0
+        })
+        setShowCreateForm(false)
+        
+        // Reload user cars to show the new one
+        const userCarsResponse = await carApi.getUserCars()
+        if (userCarsResponse.success && userCarsResponse.cars) {
+          setUserCars(userCarsResponse.cars)
+        }
+      }
+    } catch (err: any) {
+      let errorMessage = 'Neizdevās izveidot mašīnu'
+      
+      // Handle specific error cases
+      if (err.message.includes('Duplicate') && err.message.includes('VIN')) {
+        errorMessage = 'Šis VIN kods jau tiek izmantots citai mašīnai. Lūdzu, ievadiet citu VIN kodu vai atstājiet lauku tukšu.'
+      } else if (err.message.includes('Duplicate') && err.message.includes('LicensePlate')) {
+        errorMessage = 'Šī numurzīme jau tiek izmantota citai mašīnai. Lūdzu, ievadiet citu numurzīmi.'
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setIsCreatingCar(false)
+    }
+  }
+
   return (
     <div>
       <main className="p-6">
+        {/* Create Car Section */}
+        <div className="mb-8 bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Pievienot jaunu mašīnu</h2>
+              <Button 
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                variant="outline"
+              >
+                {showCreateForm ? 'Aizvērt' : 'Pievienot mašīnu'}
+              </Button>
+            </div>
+          </div>
+          
+          {showCreateForm && (
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Marka *
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.brand}
+                    onChange={(e) => setNewCarData({...newCarData, brand: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="BMW, Audi, Mercedes-Benz..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Modelis *
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.model}
+                    onChange={(e) => setNewCarData({...newCarData, model: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="A4, 320d, C220d..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Gads
+                  </label>
+                  <input
+                    type="number"
+                    value={newCarData.year}
+                    onChange={(e) => setNewCarData({...newCarData, year: parseInt(e.target.value)})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Numurzīme
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.licensePlate}
+                    onChange={(e) => setNewCarData({...newCarData, licensePlate: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="LV-1234"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    VIN
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.vin}
+                    onChange={(e) => setNewCarData({...newCarData, vin: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="17 simboli"
+                    maxLength={17}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Krāsa
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.color}
+                    onChange={(e) => setNewCarData({...newCarData, color: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Melna, Balta, Sudraba..."
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nobraukums (km)
+                  </label>
+                  <input
+                    type="number"
+                    value={newCarData.mileage}
+                    onChange={(e) => setNewCarData({...newCarData, mileage: parseInt(e.target.value) || 0})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="0"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateForm(false)}
+                  disabled={isCreatingCar}
+                >
+                  Atcelt
+                </Button>
+                <Button
+                  onClick={handleCreateCar}
+                  disabled={isCreatingCar || !newCarData.brand || !newCarData.model}
+                >
+                  {isCreatingCar ? 'Izveido...' : 'Izveidot mašīnu'}
+                </Button>
+              </div>
+              
+              <p className="text-xs text-gray-500 mt-3">
+                * Obligātie lauki. Pēc mašīnas izveidošanas jūs automātiski kļūstat par tās īpašnieku.
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* My Cars Section */}
         <div className="mb-8 bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">

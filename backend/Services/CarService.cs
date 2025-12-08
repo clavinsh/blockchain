@@ -109,6 +109,7 @@ public class CarService
             {
                 UserId = userId,
                 CarId = car.CarId,
+                RoleCode = "MASTER_OWNER",
                 AssignedAt = DateTime.UtcNow
             };
 

@@ -106,6 +106,22 @@ export interface CarUser {
   assignedAt?: string;
 }
 
+export interface CreateCarRequest {
+  brand: string;
+  model: string;
+  year: number;
+  licensePlate?: string;
+  vin?: string;
+  color?: string;
+  mileage?: number;
+}
+
+export interface CreateCarResponse {
+  success: boolean;
+  message: string;
+  carId?: number;
+}
+
 export const carApi = {
   getUserCars: async (): Promise<GetUserCarsResponse> => {
     const token = tokenManager.getToken();
@@ -223,6 +239,30 @@ export const carApi = {
 
     if (!response.ok) {
       throw new Error('Failed to fetch car data');
+    }
+
+    return response.json();
+  },
+
+  createCar: async (carData: CreateCarRequest): Promise<CreateCarResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(carData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create car');
     }
 
     return response.json();
