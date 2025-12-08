@@ -57,7 +57,34 @@ print_step "Starting the network..."
 docker-compose up -d ca_org1 orderer.example.com couchdb0 peer0.org1.example.com cli
 
 print_step "Waiting for containers to be ready..."
-sleep 10
+sleep 5
+
+# Wait for peer to be ready
+print_step "Waiting for peer to start..."
+MAX_RETRY=30
+RETRY=0
+while [ $RETRY -lt $MAX_RETRY ]; do
+    if docker exec cli peer node status 2>&1 | grep -q "status:STARTED"; then
+        echo "Peer is ready!"
+        break
+    fi
+    RETRY=$((RETRY+1))
+    echo "Waiting for peer... attempt $RETRY/$MAX_RETRY"
+    sleep 2
+done
+
+if [ $RETRY -eq $MAX_RETRY ]; then
+    print_error "Peer failed to start in time"
+    docker-compose logs peer0.org1.example.com
+    exit 1
+fi
+
+# Also verify DNS resolution works
+print_step "Verifying network connectivity..."
+docker exec cli ping -c 1 peer0.org1.example.com || {
+    print_error "Cannot reach peer from CLI container"
+    exit 1
+}
 
 print_step "Joining orderer to channel..."
 docker exec cli osnadmin channel join \
