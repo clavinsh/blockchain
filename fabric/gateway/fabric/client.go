@@ -1,62 +1,131 @@
 package fabric
 
 import (
+	"crypto/x509"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
-	"github.com/hyperledger/fabric-sdk-go/pkg/core/config"
-	"github.com/hyperledger/fabric-sdk-go/pkg/gateway"
+	"github.com/hyperledger/fabric-gateway/pkg/client"
+	"github.com/hyperledger/fabric-gateway/pkg/identity"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type Client struct {
-	gateway  *gateway.Gateway
-	network  *gateway.Network
-	contract *gateway.Contract
+	grpcConn *grpc.ClientConn
+	gateway  *client.Gateway
+	contract *client.Contract
 }
 
 func NewClient(channelName, chaincodeName string) (*Client, error) {
-	// In Docker, config is mounted at /app/config
-	ccpPath := filepath.Join("config", "connection-org1.yaml")
+	// Paths - these are relative to /app in the container
+	cryptoPath := "/app/organizations/peerOrganizations/org1.example.com"
+	certPath := filepath.Join(cryptoPath, "users", "Admin@org1.example.com", "msp", "signcerts", "Admin@org1.example.com-cert.pem")
+	keyDir := filepath.Join(cryptoPath, "users", "Admin@org1.example.com", "msp", "keystore")
+	tlsCertPath := filepath.Join(cryptoPath, "peers", "peer0.org1.example.com", "tls", "ca.crt")
 
-	if _, err := os.Stat(ccpPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("connection profile not found at %s", ccpPath)
-	}
+	peerEndpoint := "peer0.org1.example.com:7051"
+	gatewayPeer := "peer0.org1.example.com"
 
-	walletPath := "wallet"
-	wallet, err := gateway.NewFileSystemWallet(walletPath)
+	// Load credentials
+	certificate, err := loadCertificate(certPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create wallet: %w", err)
+		return nil, fmt.Errorf("failed to load certificate: %w", err)
 	}
 
-	if !wallet.Exists("admin") {
-		return nil, fmt.Errorf("admin identity not found in wallet at %s - run setup script first", walletPath)
+	id, err := identity.NewX509Identity("Org1MSP", certificate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create identity: %w", err)
 	}
 
-	gw, err := gateway.Connect(
-		gateway.WithConfig(config.FromFile(ccpPath)),
-		gateway.WithIdentity(wallet, "admin"),
+	privateKey, err := loadPrivateKey(keyDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load private key: %w", err)
+	}
+
+	sign, err := identity.NewPrivateKeySign(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create signer: %w", err)
+	}
+
+	// Create gRPC connection
+	tlsCert, err := os.ReadFile(tlsCertPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read TLS cert: %w", err)
+	}
+
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(tlsCert) {
+		return nil, fmt.Errorf("failed to add TLS cert to pool")
+	}
+
+	transportCredentials := credentials.NewClientTLSFromCert(certPool, gatewayPeer)
+	grpcConn, err := grpc.Dial(peerEndpoint,
+		grpc.WithTransportCredentials(transportCredentials),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to gateway: %w", err)
+		return nil, fmt.Errorf("failed to create gRPC connection: %w", err)
 	}
 
-	network, err := gw.GetNetwork(channelName)
+	// Create gateway
+	gw, err := client.Connect(
+		id,
+		client.WithSign(sign),
+		client.WithClientConnection(grpcConn),
+		client.WithEvaluateTimeout(5*time.Second),
+		client.WithEndorseTimeout(15*time.Second),
+		client.WithSubmitTimeout(5*time.Second),
+		client.WithCommitStatusTimeout(1*time.Minute),
+	)
 	if err != nil {
-		gw.Close()
-		return nil, fmt.Errorf("failed to get network %s: %w", channelName, err)
+		grpcConn.Close()
+		return nil, fmt.Errorf("failed to connect gateway: %w", err)
 	}
 
+	network := gw.GetNetwork(channelName)
 	contract := network.GetContract(chaincodeName)
 
 	log.Printf("Connected to Fabric network: channel=%s, chaincode=%s", channelName, chaincodeName)
 
 	return &Client{
+		grpcConn: grpcConn,
 		gateway:  gw,
-		network:  network,
 		contract: contract,
 	}, nil
+}
+
+func loadCertificate(certPath string) (*x509.Certificate, error) {
+	certPEM, err := os.ReadFile(certPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read certificate file: %w", err)
+	}
+	return identity.CertificateFromPEM(certPEM)
+}
+
+func loadPrivateKey(keyDir string) (interface{}, error) {
+	files, err := os.ReadDir(keyDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read keystore directory: %w", err)
+	}
+
+	for _, f := range files {
+		if !f.IsDir() {
+			keyPath := filepath.Join(keyDir, f.Name())
+			keyPEM, err := os.ReadFile(keyPath)
+			if err != nil {
+				continue
+			}
+			privateKey, err := identity.PrivateKeyFromPEM(keyPEM)
+			if err != nil {
+				continue
+			}
+			return privateKey, nil
+		}
+	}
+	return nil, fmt.Errorf("no private key found in %s", keyDir)
 }
 
 func (c *Client) SubmitTransaction(funcName string, args ...string) (string, error) {
@@ -83,8 +152,11 @@ func (c *Client) EvaluateTransaction(funcName string, args ...string) (string, e
 }
 
 func (c *Client) Close() {
+	log.Println("Closing Fabric gateway connection")
 	if c.gateway != nil {
-		log.Println("Closing Fabric gateway connection")
 		c.gateway.Close()
+	}
+	if c.grpcConn != nil {
+		c.grpcConn.Close()
 	}
 }

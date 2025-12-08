@@ -39,7 +39,7 @@ docker exec cli peer lifecycle chaincode package \
 
 print_step "Installing chaincode on peer..."
 docker exec cli peer lifecycle chaincode install \
-    /opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts/${CHAINCODE_NAME}.tar.gz
+    /opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts/${CHAINCODE_NAME}.tar.gz 2>&1 || echo "Chaincode may already be installed, continuing..."
 
 print_step "Getting package ID..."
 PACKAGE_ID=$(docker exec cli peer lifecycle chaincode queryinstalled --output json | jq -r ".installed_chaincodes[] | select(.label==\"${CHAINCODE_LABEL}\") | .package_id")

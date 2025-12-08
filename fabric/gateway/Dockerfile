@@ -5,15 +5,15 @@ WORKDIR /app
 # Install dependencies
 RUN apk add --no-cache git gcc musl-dev
 
-# Copy go mod files first for caching
-COPY go.mod go.sum ./
-RUN go mod download
+# Copy go mod file first
+COPY go.mod ./
+RUN go mod download || true
 
 # Copy source code
 COPY . .
 
-# Build the gateway
-RUN CGO_ENABLED=0 GOOS=linux go build -o gateway .
+# Download dependencies and build
+RUN go mod tidy && go build -o gateway .
 
 # Production image
 FROM alpine:3.19

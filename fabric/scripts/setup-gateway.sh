@@ -3,10 +3,15 @@
 set -e
 
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 NC='\033[0m'
 
 print_step() {
     echo -e "${GREEN}===> $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}ERROR: $1${NC}"
 }
 
 print_step "Setting up gateway wallet..."
@@ -14,16 +19,41 @@ print_step "Setting up gateway wallet..."
 # Create wallet directory
 mkdir -p gateway/wallet
 
-# Get the admin credentials from the generated crypto materials
-ADMIN_CERT=$(cat organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem)
-ADMIN_KEY=$(cat organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/*)
+# Find the private key file (it may have different names)
+KEYSTORE_DIR="organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore"
+CERT_FILE="organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem"
+
+# Check if files exist
+if [ ! -f "$CERT_FILE" ]; then
+    print_error "Certificate file not found at $CERT_FILE"
+    print_error "Make sure you ran network-up.sh first"
+    exit 1
+fi
+
+# Find the private key (filename varies)
+PRIV_KEY=$(find "$KEYSTORE_DIR" -type f -name "*_sk" 2>/dev/null | head -1)
+if [ -z "$PRIV_KEY" ]; then
+    PRIV_KEY=$(find "$KEYSTORE_DIR" -type f 2>/dev/null | head -1)
+fi
+
+if [ -z "$PRIV_KEY" ] || [ ! -f "$PRIV_KEY" ]; then
+    print_error "Private key not found in $KEYSTORE_DIR"
+    exit 1
+fi
+
+echo "Found certificate: $CERT_FILE"
+echo "Found private key: $PRIV_KEY"
+
+# Read and escape the certificates for JSON
+ADMIN_CERT=$(cat "$CERT_FILE" | awk '{printf "%s\\n", $0}')
+ADMIN_KEY=$(cat "$PRIV_KEY" | awk '{printf "%s\\n", $0}')
 
 # Create the wallet identity JSON
 cat > gateway/wallet/admin.id << EOF
 {
     "credentials": {
-        "certificate": "$(echo "$ADMIN_CERT" | awk '{printf "%s\\n", $0}')",
-        "privateKey": "$(echo "$ADMIN_KEY" | awk '{printf "%s\\n", $0}')"
+        "certificate": "${ADMIN_CERT}",
+        "privateKey": "${ADMIN_KEY}"
     },
     "mspId": "Org1MSP",
     "type": "X.509",

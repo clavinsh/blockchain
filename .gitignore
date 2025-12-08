@@ -104,10 +104,7 @@ go.work.sum
 fabric/organizations/*
 
 # Channel artifacts (generated blocks, transactions)
-channel-artifacts/*.block
-channel-artifacts/*.tx
-channel-artifacts/*.tar.gz
-channel-artifacts/*.json
+fabric/channel-artifacts
 
 # Wallet (contains private keys - never commit!)
 gateway/wallet/
