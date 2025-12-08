@@ -12,6 +12,10 @@ print_step() {
     echo -e "${GREEN}===> $1${NC}"
 }
 
+print_warning() {
+    echo -e "${YELLOW}WARNING: $1${NC}"
+}
+
 print_error() {
     echo -e "${RED}ERROR: $1${NC}"
 }
@@ -19,45 +23,26 @@ print_error() {
 CHANNEL_NAME="mychannel"
 CHAINCODE_NAME="vehicle"
 CHAINCODE_VERSION="1.0"
+CHAINCODE_LABEL="${CHAINCODE_NAME}_${CHAINCODE_VERSION}"
 SEQUENCE=1
-CHAINCODE_ADDRESS="chaincode-vehicle:9999"
+CHAINCODE_PATH="/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode/vehicle-contract"
 
-print_step "Building chaincode container..."
-docker-compose build chaincode-vehicle
+print_step "Downloading chaincode dependencies..."
+docker exec cli sh -c "cd ${CHAINCODE_PATH} && go mod tidy && go mod vendor"
 
-print_step "Creating chaincode package for external service..."
-
-# Create connection.json for external chaincode
-cat > /tmp/connection.json << EOF
-{
-    "address": "${CHAINCODE_ADDRESS}",
-    "dial_timeout": "10s",
-    "tls_required": false
-}
-EOF
-
-# Create metadata.json
-cat > /tmp/metadata.json << EOF
-{
-    "type": "external",
-    "label": "${CHAINCODE_NAME}_${CHAINCODE_VERSION}"
-}
-EOF
-
-# Package it
-cd /tmp
-tar cfz code.tar.gz connection.json
-tar cfz ${CHAINCODE_NAME}.tar.gz metadata.json code.tar.gz
-cd -
-
-# Copy to channel-artifacts for CLI access
-cp /tmp/${CHAINCODE_NAME}.tar.gz channel-artifacts/
+print_step "Packaging chaincode..."
+docker exec cli peer lifecycle chaincode package \
+    /opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts/${CHAINCODE_NAME}.tar.gz \
+    --path ${CHAINCODE_PATH} \
+    --lang golang \
+    --label ${CHAINCODE_LABEL}
 
 print_step "Installing chaincode on peer..."
-docker exec cli peer lifecycle chaincode install /opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts/${CHAINCODE_NAME}.tar.gz
+docker exec cli peer lifecycle chaincode install \
+    /opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts/${CHAINCODE_NAME}.tar.gz
 
 print_step "Getting package ID..."
-PACKAGE_ID=$(docker exec cli peer lifecycle chaincode queryinstalled --output json | jq -r '.installed_chaincodes[0].package_id')
+PACKAGE_ID=$(docker exec cli peer lifecycle chaincode queryinstalled --output json | jq -r ".installed_chaincodes[] | select(.label==\"${CHAINCODE_LABEL}\") | .package_id")
 echo "Package ID: $PACKAGE_ID"
 
 if [ -z "$PACKAGE_ID" ] || [ "$PACKAGE_ID" == "null" ]; then
@@ -65,16 +50,7 @@ if [ -z "$PACKAGE_ID" ] || [ "$PACKAGE_ID" == "null" ]; then
     exit 1
 fi
 
-# Update docker-compose with correct CHAINCODE_ID
-print_step "Updating chaincode container environment..."
-export CHAINCODE_ID=$PACKAGE_ID
-
-print_step "Starting chaincode container..."
-docker-compose up -d chaincode-vehicle
-
-sleep 5
-
-print_step "Approving chaincode for org..."
+print_step "Approving chaincode for Org1..."
 docker exec cli peer lifecycle chaincode approveformyorg \
     -o orderer.example.com:7050 \
     --channelID $CHANNEL_NAME \
@@ -93,7 +69,7 @@ docker exec cli peer lifecycle chaincode checkcommitreadiness \
     --sequence $SEQUENCE \
     --output json
 
-print_step "Committing chaincode..."
+print_step "Committing chaincode definition..."
 docker exec cli peer lifecycle chaincode commit \
     -o orderer.example.com:7050 \
     --channelID $CHANNEL_NAME \
@@ -106,7 +82,30 @@ docker exec cli peer lifecycle chaincode commit \
     --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
 
 print_step "Verifying chaincode is committed..."
-docker exec cli peer lifecycle chaincode querycommitted --channelID $CHANNEL_NAME --name $CHAINCODE_NAME
+docker exec cli peer lifecycle chaincode querycommitted \
+    --channelID $CHANNEL_NAME \
+    --name $CHAINCODE_NAME
+
+print_step "Testing chaincode with a sample invoke..."
+docker exec cli peer chaincode invoke \
+    -o orderer.example.com:7050 \
+    --channelID $CHANNEL_NAME \
+    --name $CHAINCODE_NAME \
+    --tls \
+    --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
+    --peerAddresses peer0.org1.example.com:7051 \
+    --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
+    -c '{"function":"RegisterVehicle","Args":["test-vehicle-001","VIN123TEST","owner-001"]}' \
+    --waitForEvent
+
+sleep 2
+
+print_step "Querying test vehicle..."
+docker exec cli peer chaincode query \
+    --channelID $CHANNEL_NAME \
+    --name $CHAINCODE_NAME \
+    -c '{"function":"ReadVehicle","Args":["test-vehicle-001"]}'
 
 echo ""
-print_step "Chaincode deployed! Run './scripts/setup-gateway.sh' to setup the gateway."
+print_step "Chaincode deployed successfully!"
+echo "Run './scripts/setup-gateway.sh' to start the gateway API."

@@ -118,7 +118,6 @@ curl http://localhost:3001/api/vehicles/v1
 | peer0.org1.example.com | 7051 | Peer node |
 | couchdb0 | 5984 | State database (rich queries) |
 | cli | - | Admin operations |
-| chaincode-vehicle | 9999 | External chaincode service |
 | gateway | 3001 | REST API |
 
 ## API Endpoints
