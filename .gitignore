@@ -94,3 +94,78 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+
+
+
+# ----- Fabric bullshit -----  
+
+# Generated crypto materials (private keys, certs)
+fabric/organizations/*
+
+# Channel artifacts (generated blocks, transactions)
+channel-artifacts/*.block
+channel-artifacts/*.tx
+channel-artifacts/*.tar.gz
+channel-artifacts/*.json
+
+# Wallet (contains private keys - never commit!)
+gateway/wallet/
+**/wallet/
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+go.sum
+
+# Docker
+docker-volumes/
+*.tar
+
+# Logs
+*.log
+logs/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Environment files (may contain secrets)
+.env
+.env.local
+.env.*.local
+
+# CouchDB data (if mounted locally)
+couchdb-data/
+
+# Hyperledger Fabric specific
+*.block
+*.tx
+*.pb

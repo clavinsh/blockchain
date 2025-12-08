@@ -2,31 +2,31 @@ FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
+# Install dependencies
 RUN apk add --no-cache git gcc musl-dev
 
+# Copy go mod files first for caching
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Copy source code
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=linux go build -a -o fabric-gateway .
+# Build the gateway
+RUN CGO_ENABLED=0 GOOS=linux go build -o gateway .
 
-# Runtime
-FROM alpine:latest
+# Production image
+FROM alpine:3.19
 
-RUN apk --no-cache add ca-certificates wget
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
-COPY --from=builder /app/fabric-gateway .
-COPY docker-entrypoint.sh .
-RUN chmod +x docker-entrypoint.sh
+COPY --from=builder /app/gateway /app/gateway
 
-RUN mkdir -p config wallet
+# Config and wallet directories will be mounted
+RUN mkdir -p /app/config /app/wallet /app/organizations
 
 EXPOSE 3001
 
-HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q --spider http://localhost:3001/health || exit 1
-
-ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["/app/gateway"]
