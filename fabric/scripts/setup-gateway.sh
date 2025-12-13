@@ -66,10 +66,26 @@ print_step "Gateway wallet created with admin identity."
 print_step "Starting gateway service..."
 docker-compose up -d gateway
 
-sleep 5
+print_step "Waiting for gateway to be ready..."
+MAX_RETRY=30
+RETRY=0
+while [ $RETRY -lt $MAX_RETRY ]; do
+    if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
+        echo "Gateway is ready!"
+        break
+    fi
+    RETRY=$((RETRY+1))
+    echo "Waiting for gateway... attempt $RETRY/$MAX_RETRY"
+    sleep 1
+done
+
+if [ $RETRY -eq $MAX_RETRY ]; then
+    print_error "Gateway failed to start"
+    exit 1
+fi
 
 print_step "Testing gateway health..."
-curl -s http://localhost:3001/health || echo "Gateway may still be starting..."
+curl -s http://localhost:3001/health
 
 echo ""
 print_step "Gateway is running at http://localhost:3001"

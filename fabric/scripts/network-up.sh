@@ -60,24 +60,34 @@ docker run --rm \
 print_step "Starting the network..."
 docker-compose up -d ca_org1 orderer.example.com couchdb0 peer0.org1.example.com cli
 
-print_step "Waiting for containers to be ready..."
-sleep 5
-
-# Wait for peer to be ready
-print_step "Waiting for peer to start..."
+# Wait for CouchDB to be ready
+print_step "Waiting for CouchDB to be ready..."
 MAX_RETRY=30
 RETRY=0
 while [ $RETRY -lt $MAX_RETRY ]; do
-    # Check if peer is responding to channel list command (doesn't need channels, just needs peer running)
-    if docker exec cli peer node status 2>&1 | grep -q "STARTED"; then
-        echo "Peer is ready!"
+    if docker exec couchdb0 curl -sf http://localhost:5984/_up > /dev/null 2>&1; then
+        echo "CouchDB is ready!"
         break
     fi
-    # Alternative check - see if peer is listening
-    if docker exec peer0.org1.example.com pgrep -x peer > /dev/null 2>&1; then
-        # Give it a moment to fully initialize
-        sleep 3
-        echo "Peer process is running!"
+    RETRY=$((RETRY+1))
+    echo "Waiting for CouchDB... attempt $RETRY/$MAX_RETRY"
+    sleep 1
+done
+
+if [ $RETRY -eq $MAX_RETRY ]; then
+    print_error "CouchDB failed to start"
+    exit 1
+fi
+
+# Wait for peer to be ready
+print_step "Waiting for peer to be ready..."
+MAX_RETRY=30
+RETRY=0
+while [ $RETRY -lt $MAX_RETRY ]; do
+    # Check if peer is responding to lifecycle chaincode queryinstalled command
+    # This will fail gracefully if peer is not ready but succeed once it is
+    if docker exec cli peer lifecycle chaincode queryinstalled > /dev/null 2>&1; then
+        echo "Peer is ready!"
         break
     fi
     RETRY=$((RETRY+1))
@@ -86,11 +96,33 @@ while [ $RETRY -lt $MAX_RETRY ]; do
 done
 
 if [ $RETRY -eq $MAX_RETRY ]; then
-    print_warning "Peer wait timed out, but continuing anyway..."
+    print_error "Peer failed to start"
+    exit 1
 fi
 
-# Extra wait for peer to fully initialize
-sleep 5
+# Wait for orderer to be ready
+print_step "Waiting for orderer to be ready..."
+MAX_RETRY=30
+RETRY=0
+while [ $RETRY -lt $MAX_RETRY ]; do
+    if docker exec cli osnadmin channel list \
+        -o orderer.example.com:7053 \
+        --ca-file /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
+        --client-cert /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt \
+        --client-key /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key \
+        > /dev/null 2>&1; then
+        echo "Orderer is ready!"
+        break
+    fi
+    RETRY=$((RETRY+1))
+    echo "Waiting for orderer... attempt $RETRY/$MAX_RETRY"
+    sleep 2
+done
+
+if [ $RETRY -eq $MAX_RETRY ]; then
+    print_error "Orderer failed to start"
+    exit 1
+fi
 
 print_step "Joining orderer to channel..."
 docker exec cli osnadmin channel join \
@@ -103,13 +135,27 @@ docker exec cli osnadmin channel join \
 
 # Verify orderer joined
 print_step "Verifying orderer channel membership..."
-docker exec cli osnadmin channel list \
-    -o orderer.example.com:7053 \
-    --ca-file /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
-    --client-cert /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt \
-    --client-key /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key
+MAX_RETRY=10
+RETRY=0
+while [ $RETRY -lt $MAX_RETRY ]; do
+    if docker exec cli osnadmin channel list \
+        -o orderer.example.com:7053 \
+        --ca-file /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
+        --client-cert /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt \
+        --client-key /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key \
+        | grep -q "$CHANNEL_NAME"; then
+        echo "Orderer successfully joined channel!"
+        break
+    fi
+    RETRY=$((RETRY+1))
+    echo "Verifying orderer joined channel... attempt $RETRY/$MAX_RETRY"
+    sleep 1
+done
 
-sleep 3
+if [ $RETRY -eq $MAX_RETRY ]; then
+    print_error "Failed to verify orderer joined channel"
+    exit 1
+fi
 
 print_step "Joining peer to channel..."
 docker exec cli peer channel join -b /opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts/genesis.block
