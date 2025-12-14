@@ -37,6 +37,7 @@ func main() {
 	vehicleHandler := handlers.NewVehicleHandler(fabricClient)
 	telemetryHandler := handlers.NewTelemetryHandler(fabricClient)
 	accessHandler := handlers.NewAccessHandler(fabricClient)
+	queryHandler := handlers.NewQueryHandler(fabricClient)
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -57,6 +58,19 @@ func main() {
 	{
 		accessRoutes.POST("/grant", accessHandler.GrantAccess)
 		accessRoutes.GET("/:onChainId/:companyId", accessHandler.ReadAccess)
+		accessRoutes.GET("/vehicle/:onChainId/grants", queryHandler.GetAccessGrantsByVehicle)
+	}
+
+	// Query routes for complex queries
+	queryRoutes := router.Group("/api/query")
+	{
+		queryRoutes.GET("/vehicles", queryHandler.GetAllVehicles)
+		queryRoutes.GET("/vehicles/owner/:ownerUserId", queryHandler.GetVehiclesByOwner)
+		queryRoutes.GET("/vehicles/vin", queryHandler.GetVehiclesByVINPrefix)
+		queryRoutes.GET("/vehicles/registered-after", queryHandler.GetVehiclesRegisteredAfter)
+		queryRoutes.GET("/vehicles/search", queryHandler.GetVehiclesByMultipleCriteria)
+		queryRoutes.GET("/vehicles/paginated", queryHandler.QueryVehiclesWithPagination)
+		queryRoutes.GET("/vehicles/:onChainId/history", queryHandler.GetVehicleHistory)
 	}
 
 	go func() {
