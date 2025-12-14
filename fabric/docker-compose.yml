@@ -163,6 +163,22 @@ services:
       - fabric_network
 
   # ============================================================
+  # Vehicle Chaincode (Chaincode as a Service)
+  # ============================================================
+  vehicle-chaincode:
+    build:
+      context: ./chaincode/vehicle-contract
+      dockerfile: Dockerfile
+    container_name: vehicle-chaincode
+    environment:
+      - CHAINCODE_SERVER_ADDRESS=0.0.0.0:9999
+      - CORE_CHAINCODE_ID_NAME=vehicle_1.0:bf57d89fadc502e5cef29f64e55428c16c42f1f0c386ece8197404400930ef1e
+    ports:
+      - "9999:9999"
+    networks:
+      - fabric_network
+
+  # ============================================================
   # Gateway API
   # ============================================================
   gateway:
