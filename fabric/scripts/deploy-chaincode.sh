@@ -34,10 +34,10 @@ print_step "Packaging chaincode for ccaas..."
 
 # Step 2: Build and start the chaincode container
 print_step "Building chaincode Docker image..."
-docker-compose build vehicle-chaincode
+docker compose build vehicle-chaincode
 
 print_step "Starting chaincode container..."
-docker-compose up -d vehicle-chaincode
+docker compose up -d vehicle-chaincode
 
 # Wait for chaincode to be ready
 print_step "Waiting for chaincode service to be ready..."
@@ -74,13 +74,13 @@ fi
 
 # Step 5: Update chaincode container with correct package ID
 print_step "Updating chaincode container with package ID..."
-docker-compose stop vehicle-chaincode
-docker-compose rm -f vehicle-chaincode
+docker compose stop vehicle-chaincode
+docker compose rm -f vehicle-chaincode
 
-# Update docker-compose to use the correct package ID
+# Update docker compose to use the correct package ID
 sed -i "s/CORE_CHAINCODE_ID_NAME=vehicle_1.0:.*/CORE_CHAINCODE_ID_NAME=${PACKAGE_ID}/" docker-compose.yml
 
-docker-compose up -d vehicle-chaincode
+docker compose up -d vehicle-chaincode
 
 # Wait for chaincode to restart
 print_step "Waiting for chaincode service to restart..."
