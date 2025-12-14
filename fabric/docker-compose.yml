@@ -172,7 +172,7 @@ services:
     container_name: vehicle-chaincode
     environment:
       - CHAINCODE_SERVER_ADDRESS=0.0.0.0:9999
-      - CORE_CHAINCODE_ID_NAME=vehicle_1.0:3a4e1f50ec0418567c69d3929f072178d770a9bb5dff653da00fb0656f4c1032
+      - CORE_CHAINCODE_ID_NAME=${CHAINCODE_PACKAGE_ID:-vehicle_1.0:placeholder}
     ports:
       - "9999:9999"
     networks:
