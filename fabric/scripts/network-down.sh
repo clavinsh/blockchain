@@ -15,7 +15,7 @@ print_warning() {
 }
 
 print_step "Bringing down the network..."
-docker-compose down --volumes --remove-orphans
+docker compose down --volumes --remove-orphans
 
 print_step "Cleaning up Docker volumes..."
 docker volume prune -f 2>/dev/null || true

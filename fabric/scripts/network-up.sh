@@ -30,7 +30,7 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 print_step "Bringing down any existing network..."
-docker-compose down --volumes --remove-orphans 2>/dev/null || true
+docker compose down --volumes --remove-orphans 2>/dev/null || true
 
 print_step "Removing old crypto materials..."
 rm -rf organizations/ordererOrganizations
@@ -58,7 +58,7 @@ docker run --rm \
     configtxgen -profile TwoOrgsApplicationGenesis -outputBlock /channel-artifacts/genesis.block -channelID $CHANNEL_NAME
 
 print_step "Starting the network..."
-docker-compose up -d ca_org1 orderer.example.com couchdb0 peer0.org1.example.com cli
+docker compose up -d ca_org1 orderer.example.com couchdb0 peer0.org1.example.com cli
 
 # Wait for CouchDB to be ready
 print_step "Waiting for CouchDB to be ready..."

@@ -64,7 +64,7 @@ EOF
 print_step "Gateway wallet created with admin identity."
 
 print_step "Starting gateway service..."
-docker-compose up -d gateway
+docker compose up -d gateway
 
 print_step "Waiting for gateway to be ready..."
 MAX_RETRY=30
