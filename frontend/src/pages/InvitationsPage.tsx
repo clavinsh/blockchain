@@ -8,6 +8,33 @@ export default function InvitationsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const { setUserCars } = useCarContext()
 
+  // Helper function for role display
+  const getRoleLabel = (roleCode: string) => {
+    switch (roleCode) {
+      case 'OWNER':
+        return 'Īpašnieks'
+      case 'DRIVER':
+        return 'Vadītājs'
+      case 'VIEWER':
+        return 'Skatītājs'
+      default:
+        return roleCode
+    }
+  }
+
+  const getRoleDescription = (roleCode: string) => {
+    switch (roleCode) {
+      case 'OWNER':
+        return 'Kā īpašnieks jūs varēsit pilnībā pārvaldīt šo mašīnu un uzaicināt citus lietotājus.'
+      case 'DRIVER':
+        return 'Kā vadītājs jūs varēsit skatīt mašīnas datus un informāciju.'
+      case 'VIEWER':
+        return 'Kā skatītājs jūs varēsit skatīt mašīnas datus un statistiku, bet ne braukšanas atskaites.'
+      default:
+        return 'Jums būs piekļuve šai mašīnai.'
+    }
+  }
+
   const loadReceivedInvites = async () => {
     setIsLoading(true)
     try {
@@ -107,7 +134,7 @@ export default function InvitationsPage() {
                             <span className="font-medium">No:</span> {invite.inviterUsername} ({invite.inviterEmail})
                           </p>
                           <p>
-                            <span className="font-medium">Loma:</span> {invite.roleCode === 'OWNER' ? 'Īpašnieks' : 'Vadītājs'}
+                            <span className="font-medium">Loma:</span> {getRoleLabel(invite.roleCode)}
                           </p>
                           <p>
                             <span className="font-medium">Nosūtīts:</span> {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('lv-LV', {
@@ -122,9 +149,7 @@ export default function InvitationsPage() {
 
                         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                           <p className="text-sm text-blue-800">
-                            {invite.roleCode === 'OWNER'
-                              ? 'Kā īpašnieks jūs varēsit pilnībā pārvaldīt šo mašīnu un uzaicināt citus lietotājus.'
-                              : 'Kā vadītājs jūs varēsit skatīt mašīnas datus un informāciju.'}
+                            {getRoleDescription(invite.roleCode)}
                           </p>
                         </div>
                       </div>

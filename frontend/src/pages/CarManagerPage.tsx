@@ -6,11 +6,11 @@ import { inviteApi, carApi, type InviteResponse, type CarUser, type CreateCarReq
 export default function CarManagerPage() {
   const { userCars, selectedCarId, setSelectedCarId, setUserCars } = useCarContext()
   const [newInviteEmail, setNewInviteEmail] = useState('')
-  const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'DRIVER'>('DRIVER')
+  const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'DRIVER' | 'VIEWER'>('DRIVER')
   const [sentInvites, setSentInvites] = useState<InviteResponse[]>([])
   const [carUsers, setCarUsers] = useState<CarUser[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // Car creation state
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newCarData, setNewCarData] = useState<CreateCarRequest>({
@@ -29,6 +29,20 @@ export default function CarManagerPage() {
   // Check if current user is an OWNER of the selected car
   const isOwner = selectedCar?.roleCode === 'OWNER'
   const canInviteUsers = isOwner
+
+  // Helper function for role display
+  const getRoleDisplay = (roleCode: string) => {
+    switch (roleCode) {
+      case 'OWNER':
+        return { label: 'Īpašnieks', color: 'bg-purple-100 text-purple-800' }
+      case 'DRIVER':
+        return { label: 'Vadītājs', color: 'bg-blue-100 text-blue-800' }
+      case 'VIEWER':
+        return { label: 'Skatītājs', color: 'bg-green-100 text-green-800' }
+      default:
+        return { label: roleCode, color: 'bg-gray-100 text-gray-800' }
+    }
+  }
 
   const loadSentInvites = async () => {
     if (!selectedCarId) return
@@ -367,11 +381,12 @@ export default function CarManagerPage() {
                     />
                     <select
                       value={newInviteRole}
-                      onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'DRIVER')}
+                      onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'DRIVER' | 'VIEWER')}
                       className="border border-gray-300 rounded-md px-3 py-2"
                     >
                       <option value="OWNER">Īpašnieks</option>
                       <option value="DRIVER">Vadītājs</option>
+                      <option value="VIEWER">Skatītājs</option>
                     </select>
                     <Button
                       onClick={handleInvite}
@@ -405,10 +420,8 @@ export default function CarManagerPage() {
                               <span className="font-medium text-gray-900">
                                 {user.username} ({user.email})
                               </span>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                user.roleCode === 'OWNER' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                {user.roleCode === 'OWNER' ? 'Īpašnieks' : 'Vadītājs'}
+                              <span className={`px-2 py-1 text-xs rounded-full ${getRoleDisplay(user.roleCode).color}`}>
+                                {getRoleDisplay(user.roleCode).label}
                               </span>
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
@@ -463,7 +476,7 @@ export default function CarManagerPage() {
                               </span>
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
-                              Loma: {invite.roleCode === 'OWNER' ? 'Īpašnieks' : 'Vadītājs'} •
+                              Loma: {getRoleDisplay(invite.roleCode).label} •
                               Nosūtīts: {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
                             </div>
                           </div>

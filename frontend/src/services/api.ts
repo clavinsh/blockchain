@@ -273,7 +273,7 @@ export const carApi = {
 export interface CreateInviteRequest {
   carId: number;
   invitedUserEmail: string;
-  roleCode: 'OWNER' | 'DRIVER';
+  roleCode: 'OWNER' | 'DRIVER' | 'VIEWER';
 }
 
 export interface InviteResponse {

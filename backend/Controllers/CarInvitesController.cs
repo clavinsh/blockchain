@@ -131,12 +131,12 @@ public class CarInvitesController : ControllerBase
         }
 
         // Validate role code
-        if (request.RoleCode != "OWNER" && request.RoleCode != "DRIVER")
+        if (request.RoleCode != "OWNER" && request.RoleCode != "DRIVER" && request.RoleCode != "VIEWER")
         {
             return BadRequest(new InviteActionResponse
             {
                 Success = false,
-                Message = "Invalid role code. Must be OWNER or DRIVER"
+                Message = "Invalid role code. Must be OWNER, DRIVER, or VIEWER"
             });
         }
 
