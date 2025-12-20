@@ -21,17 +21,8 @@ public static class FabricServiceExtensions
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
-        // Register service layer
-        services.AddScoped<IVehicleService, VehicleService>();
+        // Register telemetry service
         services.AddScoped<ITelemetryService, TelemetryService>();
-        services.AddScoped<IAccessService, AccessService>();
-
-        // Register query service with its own HttpClient
-        services.AddHttpClient<IVehicleQueryService, VehicleQueryService>(client =>
-        {
-            client.BaseAddress = new Uri(fabricGatewayUrl);
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
 
         return services;
     }
