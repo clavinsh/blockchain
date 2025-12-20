@@ -34,7 +34,7 @@ public class TelemetryDataService
     public async Task<DrivingReport> GenerateReportAsync(int carId, DateTime from, DateTime to)
     {
         var telemetryData = await FetchTelemetryDataAsync(carId, from, to);
-        
+
         if (telemetryData == null || !telemetryData.Any())
         {
             throw new ArgumentException("No telemetry data found for the specified period");
@@ -83,7 +83,7 @@ public class TelemetryDataService
     public async Task<InsuranceSummary> GenerateInsuranceSummaryAsync(int carId, DateTime from, DateTime to)
     {
         var report = await GenerateReportAsync(carId, from, to);
-        
+
         return new InsuranceSummary
         {
             VehicleId = report.CarId,
@@ -109,7 +109,7 @@ public class TelemetryDataService
     public async Task<ResellerSummary> GenerateResellerSummaryAsync(int carId, DateTime from, DateTime to)
     {
         var report = await GenerateReportAsync(carId, from, to);
-        
+
         return new ResellerSummary
         {
             VehicleId = report.CarId,
@@ -136,7 +136,7 @@ public class TelemetryDataService
     public async Task<RouteData> GetRouteDataAsync(int carId, DateTime from, DateTime to)
     {
         var telemetryData = await FetchTelemetryDataAsync(carId, from, to);
-        
+
         if (telemetryData == null || !telemetryData.Any())
         {
             throw new ArgumentException("No route data found for the specified period");
@@ -175,8 +175,8 @@ public class TelemetryDataService
     {
         // Fetch data from CarDataCache where InsertTime is between from and to
         var cacheEntries = await _context.CarDataCaches
-            .Where(c => c.CarId == carId 
-                     && c.InsertTime >= from 
+            .Where(c => c.CarId == carId
+                     && c.InsertTime >= from
                      && c.InsertTime <= to
                      && c.DeleteTime == null) // Only fetch non-deleted entries
             .OrderBy(c => c.InsertTime)
@@ -208,10 +208,10 @@ public class TelemetryDataService
     private BasicStatistics CalculateBasicStatistics(List<VehicleSensorData> data)
     {
         var orderedData = data.OrderBy(x => x.Timestamp).ToList();
-        
+
         var totalDistance = orderedData.Last().OdometerKm - orderedData.First().OdometerKm;
         var totalTime = (orderedData.Last().Timestamp - orderedData.First().Timestamp).TotalHours;
-        
+
         return new BasicStatistics
         {
             TotalDistance = totalDistance,
@@ -301,10 +301,10 @@ public class TelemetryDataService
             .ToList();
 
         // Calculate smooth driving percentage
-        var totalEvents = analysis.HarshBrakingEvents.Count + 
-                        analysis.HarshAccelerationEvents.Count + 
+        var totalEvents = analysis.HarshBrakingEvents.Count +
+                        analysis.HarshAccelerationEvents.Count +
                         analysis.HarshCorneringEvents.Count;
-        
+
         analysis.SmoothDrivingPercentage = 100.0 - ((totalEvents / (double)data.Count) * 100.0);
 
         return analysis;
@@ -432,7 +432,7 @@ public class TelemetryDataService
     private EventSeverity CalculateSeverity(double value, double threshold, bool isNegative)
     {
         var diff = isNegative ? Math.Abs(value) - Math.Abs(threshold) : value - threshold;
-        
+
         if (diff < 0.1) return EventSeverity.Low;
         if (diff < 0.3) return EventSeverity.Medium;
         return EventSeverity.High;
@@ -469,7 +469,7 @@ public class TelemetryDataService
         // Score 70-79: 1.2x (20% increase)
         // Score 60-69: 1.5x (50% increase)
         // Score <60: 2.0x (100% increase)
-        
+
         if (score >= 90) return 0.8;
         if (score >= 80) return 1.0;
         if (score >= 70) return 1.2;
@@ -506,7 +506,7 @@ public class TelemetryDataService
     private WearLevel CalculateBrakeWear(int harshBrakingCount, int totalDataPoints)
     {
         var rate = (harshBrakingCount / (double)totalDataPoints) * 100;
-        
+
         if (rate < 1) return WearLevel.Low;
         if (rate < 3) return WearLevel.Moderate;
         if (rate < 5) return WearLevel.High;
@@ -517,7 +517,7 @@ public class TelemetryDataService
     {
         var avgRpm = data.Average(x => x.EngineRpm);
         var rate = (overRevCount / (double)data.Count) * 100;
-        
+
         if (avgRpm > 4000 || rate > 5) return WearLevel.High;
         if (avgRpm > 3500 || rate > 3) return WearLevel.Moderate;
         return WearLevel.Low;
@@ -526,7 +526,7 @@ public class TelemetryDataService
     private WearLevel CalculateTireWear(int corneringCount, int accelerationCount)
     {
         var totalStress = corneringCount + accelerationCount;
-        
+
         if (totalStress < 10) return WearLevel.Low;
         if (totalStress < 30) return WearLevel.Moderate;
         if (totalStress < 50) return WearLevel.High;
@@ -538,7 +538,7 @@ public class TelemetryDataService
         // Simplified: based on average RPM and throttle changes
         var avgRpm = data.Average(x => x.EngineRpm);
         var avgThrottle = data.Average(x => x.ThrottlePosition);
-        
+
         return (avgRpm / 6000.0) * 50 + (avgThrottle / 100.0) * 50;
     }
 
