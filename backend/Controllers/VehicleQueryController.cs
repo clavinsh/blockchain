@@ -61,30 +61,30 @@ public class VehicleQueryController : ControllerBase
 
     /// <summary>
     /// Get telemetry for a vehicle within a time range
-    /// Example: GET /api/blockchain/query/telemetry/range?vehicleId=vehicle-001&startTime=2024-01-01&endTime=2024-12-31
+    /// Example: GET /api/blockchain/query/telemetry/range?carId=1&startTime=2024-01-01&endTime=2024-12-31
     /// </summary>
     [HttpGet("range")]
     public async Task<ActionResult<List<VehicleTelemetry>>> GetTelemetryByTimeRange(
-        [FromQuery] string vehicleId,
+        [FromQuery] string carId,
         [FromQuery] DateTime? startTime = null,
         [FromQuery] DateTime? endTime = null)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(vehicleId))
+            if (string.IsNullOrWhiteSpace(carId))
             {
-                return BadRequest(new { error = "VehicleId is required" });
+                return BadRequest(new { error = "CarId is required" });
             }
 
             var telemetry = await _fabricClient.GetTelemetryByVehicleAndTimeRangeAsync(
-                vehicleId, startTime, endTime);
+                carId, startTime, endTime);
 
             return Ok(new
             {
                 success = true,
                 telemetry,
                 count = telemetry.Count,
-                vehicleId,
+                carId,
                 startTime,
                 endTime
             });

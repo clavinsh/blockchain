@@ -4,11 +4,11 @@ import (
 	"time"
 )
 
-// VehicleTelemetry stores vehicle ID, telemetry data, and timestamp
+// VehicleTelemetry stores car ID, car data, and timestamp
 type VehicleTelemetry struct {
-	VehicleID     string    `json:"vehicleId"`
-	TelemetryData string    `json:"telemetryData"` // JSON string containing telemetry
-	InsertedAt    time.Time `json:"insertedAt"`
+	CarId   string    `json:"carId"`
+	CarData string    `json:"carData"` // JSON string containing telemetry
+	InsertTime time.Time `json:"insertTime"`
 }
 
 // PaginatedQueryResult is used for paginated queries

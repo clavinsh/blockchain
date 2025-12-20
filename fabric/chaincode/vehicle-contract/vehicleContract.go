@@ -13,16 +13,16 @@ type VehicleContract struct {
 }
 
 // SubmitTelemetry stores telemetry data for a vehicle
-// Each submission creates a new record with composite key: telemetry~vehicleId~timestamp
+// Each submission creates a new record with composite key: telemetry~carId~timestamp
 func (c *VehicleContract) SubmitTelemetry(
 	ctx contractapi.TransactionContextInterface,
-	vehicleID string,
-	telemetryData string,
+	carId string,
+	carData string,
 ) error {
 	record := VehicleTelemetry{
-		VehicleID:     vehicleID,
-		TelemetryData: telemetryData,
-		InsertedAt:    time.Now(),
+		CarId:      carId,
+		CarData:    carData,
+		InsertTime: time.Now(),
 	}
 
 	recordJSON, err := json.Marshal(record)
@@ -30,8 +30,8 @@ func (c *VehicleContract) SubmitTelemetry(
 		return err
 	}
 
-	// Use composite key: telemetry~vehicleId~timestamp
-	key, err := ctx.GetStub().CreateCompositeKey("telemetry", []string{vehicleID, fmt.Sprintf("%d", record.InsertedAt.UnixNano())})
+	// Use composite key: telemetry~carId~timestamp
+	key, err := ctx.GetStub().CreateCompositeKey("telemetry", []string{carId, fmt.Sprintf("%d", record.InsertTime.UnixNano())})
 	if err != nil {
 		return err
 	}
@@ -60,9 +60,9 @@ func (c *VehicleContract) ReadTelemetry(
 // GetTelemetryByVehicle retrieves all telemetry records for a specific vehicle
 func (c *VehicleContract) GetTelemetryByVehicle(
 	ctx contractapi.TransactionContextInterface,
-	vehicleID string,
+	carId string,
 ) ([]*VehicleTelemetry, error) {
-	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("telemetry", []string{vehicleID})
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("telemetry", []string{carId})
 	if err != nil {
 		return nil, err
 	}

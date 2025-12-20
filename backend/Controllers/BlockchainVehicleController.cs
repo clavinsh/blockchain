@@ -47,12 +47,12 @@ public class BlockchainVehicleController : ControllerBase
     /// <summary>
     /// Get all telemetry records for a specific vehicle
     /// </summary>
-    [HttpGet("vehicle/{vehicleId}")]
-    public async Task<ActionResult<List<VehicleTelemetry>>> GetTelemetryByVehicle(string vehicleId)
+    [HttpGet("vehicle/{carId}")]
+    public async Task<ActionResult<List<VehicleTelemetry>>> GetTelemetryByVehicle(string carId)
     {
         try
         {
-            var telemetry = await _telemetryService.GetTelemetryByVehicleAsync(vehicleId);
+            var telemetry = await _telemetryService.GetTelemetryByVehicleAsync(carId);
             return Ok(new { success = true, telemetry, count = telemetry.Count });
         }
         catch (ArgumentException ex)
@@ -61,7 +61,7 @@ public class BlockchainVehicleController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get telemetry for vehicle {VehicleId}", vehicleId);
+            _logger.LogError(ex, "Failed to get telemetry for vehicle {CarId}", carId);
             return StatusCode(500, new { error = "Failed to retrieve telemetry", details = ex.Message });
         }
     }

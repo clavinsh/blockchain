@@ -13,7 +13,7 @@ public interface ITelemetryService
     /// <summary>
     /// Gets all telemetry records for a specific vehicle
     /// </summary>
-    Task<List<VehicleTelemetry>> GetTelemetryByVehicleAsync(string vehicleId);
+    Task<List<VehicleTelemetry>> GetTelemetryByVehicleAsync(string carId);
 }
 
-public record SubmitTelemetryRequest(string VehicleId, string TelemetryData);
+public record SubmitTelemetryRequest(string CarId, string CarData);

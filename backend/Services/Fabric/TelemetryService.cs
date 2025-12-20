@@ -16,29 +16,29 @@ public class TelemetryService : ITelemetryService
 
     public async Task<FabricResponse> SubmitTelemetryAsync(SubmitTelemetryRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.VehicleId))
+        if (string.IsNullOrWhiteSpace(request.CarId))
         {
-            throw new ArgumentException("VehicleId is required", nameof(request.VehicleId));
+            throw new ArgumentException("CarId is required", nameof(request.CarId));
         }
 
-        if (string.IsNullOrWhiteSpace(request.TelemetryData))
+        if (string.IsNullOrWhiteSpace(request.CarData))
         {
-            throw new ArgumentException("TelemetryData is required", nameof(request.TelemetryData));
+            throw new ArgumentException("CarData is required", nameof(request.CarData));
         }
 
         try
         {
             _logger.LogInformation(
-                "Submitting telemetry data for vehicle {VehicleId}",
-                request.VehicleId);
+                "Submitting telemetry data for vehicle {CarId}",
+                request.CarId);
 
             var result = await _fabricClient.SubmitTelemetryAsync(
-                request.VehicleId,
-                request.TelemetryData);
+                request.CarId,
+                request.CarData);
 
             _logger.LogInformation(
-                "Successfully submitted telemetry data for vehicle {VehicleId}",
-                request.VehicleId);
+                "Successfully submitted telemetry data for vehicle {CarId}",
+                request.CarId);
 
             return result;
         }
@@ -46,35 +46,35 @@ public class TelemetryService : ITelemetryService
         {
             _logger.LogError(
                 ex,
-                "Failed to submit telemetry data for vehicle {VehicleId}",
-                request.VehicleId);
+                "Failed to submit telemetry data for vehicle {CarId}",
+                request.CarId);
             throw;
         }
     }
 
-    public async Task<List<VehicleTelemetry>> GetTelemetryByVehicleAsync(string vehicleId)
+    public async Task<List<VehicleTelemetry>> GetTelemetryByVehicleAsync(string carId)
     {
-        if (string.IsNullOrWhiteSpace(vehicleId))
+        if (string.IsNullOrWhiteSpace(carId))
         {
-            throw new ArgumentException("VehicleId is required", nameof(vehicleId));
+            throw new ArgumentException("CarId is required", nameof(carId));
         }
 
         try
         {
-            _logger.LogInformation("Retrieving telemetry for vehicle {VehicleId}", vehicleId);
+            _logger.LogInformation("Retrieving telemetry for vehicle {CarId}", carId);
 
-            var response = await _fabricClient.GetTelemetryByVehicleAsync(vehicleId);
+            var response = await _fabricClient.GetTelemetryByVehicleAsync(carId);
 
             _logger.LogInformation(
-                "Successfully retrieved {Count} telemetry records for vehicle {VehicleId}",
+                "Successfully retrieved {Count} telemetry records for vehicle {CarId}",
                 response.Count,
-                vehicleId);
+                carId);
 
             return response;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to retrieve telemetry for vehicle {VehicleId}", vehicleId);
+            _logger.LogError(ex, "Failed to retrieve telemetry for vehicle {CarId}", carId);
             throw;
         }
     }

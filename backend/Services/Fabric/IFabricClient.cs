@@ -8,12 +8,12 @@ public interface IFabricClient
     /// <summary>
     /// Submits telemetry data to the blockchain
     /// </summary>
-    Task<FabricResponse> SubmitTelemetryAsync(string vehicleId, string telemetryData);
+    Task<FabricResponse> SubmitTelemetryAsync(string carId, string carData);
 
     /// <summary>
     /// Gets all telemetry records for a specific vehicle
     /// </summary>
-    Task<List<VehicleTelemetry>> GetTelemetryByVehicleAsync(string vehicleId);
+    Task<List<VehicleTelemetry>> GetTelemetryByVehicleAsync(string carId);
 
     /// <summary>
     /// Gets all telemetry records from the blockchain
@@ -29,5 +29,5 @@ public interface IFabricClient
     /// Gets telemetry records for a vehicle within a time range
     /// </summary>
     Task<List<VehicleTelemetry>> GetTelemetryByVehicleAndTimeRangeAsync(
-        string vehicleId, DateTime? startTime, DateTime? endTime);
+        string carId, DateTime? startTime, DateTime? endTime);
 }

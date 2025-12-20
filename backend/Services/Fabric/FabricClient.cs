@@ -1,7 +1,7 @@
 namespace backend.Services.Fabric;
 
 /// <summary>
-/// HTTP-based Fabric client that communicates with the Go gateway API
+/// HTTP Fabric client that communicates with the Go gateway API
 /// </summary>
 public class FabricClient : IFabricClient
 {
@@ -14,12 +14,12 @@ public class FabricClient : IFabricClient
         _logger = logger;
     }
 
-    public async Task<FabricResponse> SubmitTelemetryAsync(string vehicleId, string telemetryData)
+    public async Task<FabricResponse> SubmitTelemetryAsync(string carId, string carData)
     {
         var request = new
         {
-            vehicleId,
-            telemetryData
+            carId,
+            carData
         };
 
         var response = await _httpClient.PostAsJsonAsync("/api/telemetry/submit", request);
@@ -30,9 +30,9 @@ public class FabricClient : IFabricClient
             ?? throw new InvalidDataException("Failed to deserialize Fabric response");
     }
 
-    public async Task<List<VehicleTelemetry>> GetTelemetryByVehicleAsync(string vehicleId)
+    public async Task<List<VehicleTelemetry>> GetTelemetryByVehicleAsync(string carId)
     {
-        var response = await _httpClient.GetAsync($"/api/telemetry/vehicle/{vehicleId}");
+        var response = await _httpClient.GetAsync($"/api/telemetry/vehicle/{carId}");
 
         response.EnsureSuccessStatusCode();
 
@@ -62,9 +62,9 @@ public class FabricClient : IFabricClient
     }
 
     public async Task<List<VehicleTelemetry>> GetTelemetryByVehicleAndTimeRangeAsync(
-        string vehicleId, DateTime? startTime, DateTime? endTime)
+        string carId, DateTime? startTime, DateTime? endTime)
     {
-        var queryParams = new List<string> { $"vehicleId={vehicleId}" };
+        var queryParams = new List<string> { $"carId={carId}" };
 
         if (startTime.HasValue)
         {

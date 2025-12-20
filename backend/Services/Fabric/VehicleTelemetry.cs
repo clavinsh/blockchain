@@ -5,7 +5,7 @@ namespace backend.Services.Fabric;
 /// </summary>
 public class VehicleTelemetry
 {
-    public string VehicleId { get; set; } = string.Empty;
-    public string TelemetryData { get; set; } = string.Empty;
-    public DateTime InsertedAt { get; set; }
+    public string CarId { get; set; } = string.Empty;
+    public string CarData { get; set; } = string.Empty;
+    public DateTime InsertTime { get; set; }
 }
