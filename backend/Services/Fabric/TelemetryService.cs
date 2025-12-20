@@ -78,6 +78,90 @@ public class TelemetryService
             throw;
         }
     }
+
+    public async Task<List<VehicleTelemetry>> GetAllTelemetryAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Retrieving all telemetry records from blockchain");
+
+            var response = await _fabricClient.GetAllTelemetryAsync();
+
+            _logger.LogInformation(
+                "Successfully retrieved {Count} total telemetry records",
+                response.Count);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve all telemetry records");
+            throw;
+        }
+    }
+
+    public async Task<List<VehicleTelemetry>> GetTelemetryAfterDateAsync(DateTime timestamp)
+    {
+        try
+        {
+            _logger.LogInformation(
+                "Retrieving telemetry records after {Timestamp}",
+                timestamp);
+
+            var response = await _fabricClient.GetTelemetryAfterAsync(timestamp);
+
+            _logger.LogInformation(
+                "Successfully retrieved {Count} telemetry records after {Timestamp}",
+                response.Count,
+                timestamp);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to retrieve telemetry records after {Timestamp}",
+                timestamp);
+            throw;
+        }
+    }
+
+    public async Task<List<VehicleTelemetry>> GetTelemetryByVehicleAndTimeRangeAsync(
+        string carId, DateTime? startTime, DateTime? endTime)
+    {
+        if (string.IsNullOrWhiteSpace(carId))
+        {
+            throw new ArgumentException("CarId is required", nameof(carId));
+        }
+
+        try
+        {
+            _logger.LogInformation(
+                "Retrieving telemetry for vehicle {CarId} from {StartTime} to {EndTime}",
+                carId,
+                startTime,
+                endTime);
+
+            var response = await _fabricClient.GetTelemetryByVehicleAndTimeRangeAsync(
+                carId, startTime, endTime);
+
+            _logger.LogInformation(
+                "Successfully retrieved {Count} telemetry records for vehicle {CarId} in time range",
+                response.Count,
+                carId);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to retrieve telemetry for vehicle {CarId} in time range",
+                carId);
+            throw;
+        }
+    }
 }
 
 public record SubmitTelemetryRequest(string CarId, string CarData);
