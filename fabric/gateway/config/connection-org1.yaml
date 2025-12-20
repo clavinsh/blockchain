@@ -1,0 +1,39 @@
+---
+name: ubi-network-org1
+version: 1.0.0
+
+client:
+  organization: Org1
+  connection:
+    timeout:
+      peer:
+        endorser: '300'
+
+organizations:
+  Org1:
+    mspid: Org1MSP
+    peers:
+      - peer0.org1.example.com
+    certificateAuthorities:
+      - ca.org1.example.com
+    # Path to admin user's signing cert and key (relative to /app in container)
+    cryptoPath: /app/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+
+peers:
+  peer0.org1.example.com:
+    # Use container name, not localhost
+    url: grpcs://peer0.org1.example.com:7051
+    tlsCACerts:
+      path: /app/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.example.com
+      hostnameOverride: peer0.org1.example.com
+
+certificateAuthorities:
+  ca.org1.example.com:
+    url: https://ca_org1:7054
+    caName: ca-org1
+    tlsCACerts:
+      path: /app/organizations/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem
+    httpOptions:
+      verify: false
