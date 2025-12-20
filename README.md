@@ -4,7 +4,6 @@
 - **Docker Desktop**
 - **.NET SDK 8.0+**
 - **Node.js 18+**
-- **Hyperledger Fabric**
 
 ## Project Setup
 
@@ -39,23 +38,37 @@ npm run dev
 ```
 Frontend: `http://localhost:5173`
 
-### 5. Using process
+### 5. Fabric Blockchain Setup
+Navigate to fabric directory and start the network:
+```bash
+cd fabric
+
+# Start Fabric network (CA, Orderer, Peer, CouchDB)
+sudo ./scripts/network-up.sh
+
+# Deploy chaincode (vehicle telemetry smart contract)
+sudo ./scripts/deploy-chaincode.sh
+
+# Setup and start Gateway API
+./scripts/setup-gateway.sh
+```
+Gateway API: `http://localhost:3001`
+
+**Components:**
+- **Chaincode:** Go smart contract for vehicle telemetry (runs as external service)
+- **Gateway:** Go REST API that bridges .NET backend to Fabric network
+- **Peer/Orderer:** Fabric network nodes for consensus and ledger management
+- **CouchDB:** Rich query state database
+
+To shut down:
+```bash
+./scripts/network-down.sh
+```
+
+### 6. Using process
 1. Open browser `http://localhost:5173`
 2. Register / Login
 3. Access dashboard
-
-## Blockchain Setup
-
-### Hyperledger Fabric Test Network Setup
-Clone and set up Hyperledger Fabric test network:
-```bash
-git clone https://github.com/hyperledger/fabric-samples.git
-cd fabric-samples/test-network
-
-# Download prerequisites and start network
-./network.sh prereq
-./network.sh up createChannel -ca
-```
 
 ## Project tech
 
@@ -77,3 +90,8 @@ cd fabric-samples/test-network
 - **TailwindCSS v4**
 - **shadcn/ui**
 - **React Router**
+
+### Blockchain:
+- **Hyperledger Fabric 2.5** (Peer, Orderer, CA)
+- **Go 1.21** (Chaincode & Gateway)
+- **CouchDB 3.3** (State database for complex queries)
