@@ -1,6 +1,9 @@
 namespace backend.Services.Fabric;
 
-public class FabricClient
+/// <summary>
+/// HTTP-based Fabric client that communicates with the Go gateway API
+/// </summary>
+public class FabricClient : IFabricClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<FabricClient> _logger;
@@ -11,16 +14,15 @@ public class FabricClient
         _logger = logger;
     }
 
-    public async Task<FabricResponse> RegisterVehicleAsync(string onChainId, string vin, string ownerUserId)
+    public async Task<FabricResponse> SubmitTelemetryAsync(string vehicleId, string telemetryData)
     {
         var request = new
         {
-            onChainId,
-            vin,
-            ownerUserId
+            vehicleId,
+            telemetryData
         };
 
-        var response = await _httpClient.PostAsJsonAsync("/api/vehicles/register", request);
+        var response = await _httpClient.PostAsJsonAsync("/api/telemetry/submit", request);
 
         response.EnsureSuccessStatusCode();
 
@@ -28,49 +30,59 @@ public class FabricClient
             ?? throw new InvalidDataException("Failed to deserialize Fabric response");
     }
 
-    public async Task<VehicleResponse> ReadVehicleAsync(string onChainId)
+    public async Task<List<VehicleTelemetry>> GetTelemetryByVehicleAsync(string vehicleId)
     {
-        var response = await _httpClient.GetAsync($"/api/vehicles/{onChainId}");
+        var response = await _httpClient.GetAsync($"/api/telemetry/vehicle/{vehicleId}");
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<VehicleResponse>()
-            ?? throw new Exception("Vehicle not found");
+        return await response.Content.ReadFromJsonAsync<List<VehicleTelemetry>>()
+            ?? throw new Exception("Failed to retrieve telemetry");
     }
 
-    public async Task<FabricResponse> SubmitDataHashAsync(string onChainId, string dataHash)
+    public async Task<List<VehicleTelemetry>> GetAllTelemetryAsync()
     {
-        var request = new { onChainId, dataHash };
-
-        var response = await _httpClient.PostAsJsonAsync("/api/telemetry/hash", request);
+        var response = await _httpClient.GetAsync("/api/telemetry/all");
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<FabricResponse>()
-            ?? throw new Exception("Failed to submit hash");
+        return await response.Content.ReadFromJsonAsync<List<VehicleTelemetry>>()
+            ?? throw new Exception("Failed to retrieve all telemetry");
     }
 
-
-    public async Task<FabricResponse> GrantAccessAsync(string onChainId, string insuranceCompanyId, int durationDays)
+    public async Task<List<VehicleTelemetry>> GetTelemetryAfterAsync(DateTime timestamp)
     {
-        var request = new { onChainId, insuranceCompanyId, durationDays };
-
-        var response = await _httpClient.PostAsJsonAsync("/api/access/grant", request);
+        var isoTimestamp = timestamp.ToString("yyyy-MM-ddTHH:mm:ssZ");
+        var response = await _httpClient.GetAsync($"/api/telemetry/after?timestamp={isoTimestamp}");
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<FabricResponse>()
-            ?? throw new Exception("Failed to grant access");
+        return await response.Content.ReadFromJsonAsync<List<VehicleTelemetry>>()
+            ?? throw new Exception("Failed to retrieve telemetry");
     }
 
-    public async Task<AccessResponse> ReadAccessAsync(string onChainId, string insuranceCompanyId)
+    public async Task<List<VehicleTelemetry>> GetTelemetryByVehicleAndTimeRangeAsync(
+        string vehicleId, DateTime? startTime, DateTime? endTime)
     {
-        var response = await _httpClient.GetAsync($"/api/access/{onChainId}/{insuranceCompanyId}");
+        var queryParams = new List<string> { $"vehicleId={vehicleId}" };
+
+        if (startTime.HasValue)
+        {
+            queryParams.Add($"startTime={startTime.Value:yyyy-MM-ddTHH:mm:ssZ}");
+        }
+
+        if (endTime.HasValue)
+        {
+            queryParams.Add($"endTime={endTime.Value:yyyy-MM-ddTHH:mm:ssZ}");
+        }
+
+        var queryString = string.Join("&", queryParams);
+        var response = await _httpClient.GetAsync($"/api/telemetry/range?{queryString}");
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<AccessResponse>()
-            ?? throw new Exception("Failed to read access");
+        return await response.Content.ReadFromJsonAsync<List<VehicleTelemetry>>()
+            ?? throw new Exception("Failed to retrieve telemetry");
     }
 }
 

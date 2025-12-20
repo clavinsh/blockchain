@@ -66,14 +66,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<CarService>();
 
-
-builder.Services.AddHttpClient<FabricClient>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["FabricGateway:BaseUrl"]
-            ?? "http://localhost:3001");
-
-    client.Timeout = TimeSpan.FromSeconds(90);
-});
+// Register Fabric blockchain services
+builder.Services.AddFabricServices(builder.Configuration);
 
 
 var app = builder.Build();
