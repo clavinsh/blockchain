@@ -3,12 +3,12 @@ namespace backend.Services.Fabric;
 /// <summary>
 /// Service for telemetry-related blockchain operations
 /// </summary>
-public class TelemetryService : ITelemetryService
+public class TelemetryService
 {
-    private readonly IFabricClient _fabricClient;
+    private readonly FabricClient _fabricClient;
     private readonly ILogger<TelemetryService> _logger;
 
-    public TelemetryService(IFabricClient fabricClient, ILogger<TelemetryService> logger)
+    public TelemetryService(FabricClient fabricClient, ILogger<TelemetryService> logger)
     {
         _fabricClient = fabricClient;
         _logger = logger;
@@ -79,3 +79,5 @@ public class TelemetryService : ITelemetryService
         }
     }
 }
+
+public record SubmitTelemetryRequest(string CarId, string CarData);

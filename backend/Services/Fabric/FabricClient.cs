@@ -3,7 +3,7 @@ namespace backend.Services.Fabric;
 /// <summary>
 /// HTTP Fabric client that communicates with the Go gateway API
 /// </summary>
-public class FabricClient : IFabricClient
+public class FabricClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<FabricClient> _logger;
