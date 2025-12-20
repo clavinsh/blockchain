@@ -12,102 +12,76 @@ type VehicleContract struct {
 	contractapi.Contract
 }
 
-func (c *VehicleContract) RegisterVehicle(
+// SubmitTelemetry stores telemetry data for a vehicle
+// Each submission creates a new record with composite key: telemetry~vehicleId~timestamp
+func (c *VehicleContract) SubmitTelemetry(
 	ctx contractapi.TransactionContextInterface,
-	onChainID string,
-	vin string,
-	ownerUserID string,
+	vehicleID string,
+	telemetryData string,
 ) error {
-	vehicle := Vehicle{
-		OnChainID:    onChainID,
-		VIN:          vin,
-		OwnerUserID:  ownerUserID,
-		RegisteredAt: time.Now(),
+	record := VehicleTelemetry{
+		VehicleID:     vehicleID,
+		TelemetryData: telemetryData,
+		InsertedAt:    time.Now(),
 	}
 
-	vehicleJSON, err := json.Marshal(vehicle)
+	recordJSON, err := json.Marshal(record)
 	if err != nil {
 		return err
 	}
 
-	return ctx.GetStub().PutState(onChainID, vehicleJSON)
+	// Use composite key: telemetry~vehicleId~timestamp
+	key, err := ctx.GetStub().CreateCompositeKey("telemetry", []string{vehicleID, fmt.Sprintf("%d", record.InsertedAt.UnixNano())})
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(key, recordJSON)
 }
 
-func (c *VehicleContract) ReadVehicle(
+// ReadTelemetry retrieves a specific telemetry record by composite key
+func (c *VehicleContract) ReadTelemetry(
 	ctx contractapi.TransactionContextInterface,
-	onChainID string,
-) (*Vehicle, error) {
-	vehicleJSON, err := ctx.GetStub().GetState(onChainID)
+	key string,
+) (*VehicleTelemetry, error) {
+	recordJSON, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
 	}
-	if vehicleJSON == nil {
-		return nil, fmt.Errorf("vehicle not found")
+	if recordJSON == nil {
+		return nil, fmt.Errorf("telemetry record not found")
 	}
 
-	var vehicle Vehicle
-	err = json.Unmarshal(vehicleJSON, &vehicle)
-	return &vehicle, err
+	var record VehicleTelemetry
+	err = json.Unmarshal(recordJSON, &record)
+	return &record, err
 }
 
-func (c *VehicleContract) SubmitDataHash(
+// GetTelemetryByVehicle retrieves all telemetry records for a specific vehicle
+func (c *VehicleContract) GetTelemetryByVehicle(
 	ctx contractapi.TransactionContextInterface,
-	onChainID string,
-	hash string,
-) error {
-	dataHash := DataHash{
-		OnChainID: onChainID,
-		Hash:      hash,
-		Timestamp: time.Now(),
-	}
-
-	hashJSON, err := json.Marshal(dataHash)
-	if err != nil {
-		return err
-	}
-
-	key := fmt.Sprintf("hash~%s~%d", onChainID, time.Now().Unix())
-	return ctx.GetStub().PutState(key, hashJSON)
-}
-
-func (c *VehicleContract) GrantAccess(
-	ctx contractapi.TransactionContextInterface,
-	onChainID string,
-	grantedTo string,
-	durationDays int,
-) error {
-	access := AccessGrant{
-		OnChainID: onChainID,
-		GrantedTo: grantedTo,
-		GrantedAt: time.Now(),
-		ExpiresAt: time.Now().AddDate(0, 0, durationDays),
-	}
-
-	accessJSON, err := json.Marshal(access)
-	if err != nil {
-		return err
-	}
-
-	key := fmt.Sprintf("access~%s~%s", onChainID, grantedTo)
-	return ctx.GetStub().PutState(key, accessJSON)
-}
-
-func (c *VehicleContract) ReadAccess(
-	ctx contractapi.TransactionContextInterface,
-	onChainID string,
-	grantedTo string,
-) (*AccessGrant, error) {
-	key := fmt.Sprintf("access~%s~%s", onChainID, grantedTo)
-
-	accessJSON, err := ctx.GetStub().GetState(key)
+	vehicleID string,
+) ([]*VehicleTelemetry, error) {
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("telemetry", []string{vehicleID})
 	if err != nil {
 		return nil, err
 	}
-	if accessJSON == nil {
-		return nil, nil
+	defer resultsIterator.Close()
+
+	var records []*VehicleTelemetry
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var record VehicleTelemetry
+		err = json.Unmarshal(queryResponse.Value, &record)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, &record)
 	}
 
-	var access AccessGrant
-	err = json.Unmarshal(accessJSON, &access)
-	return &access, err
+	return records, nil
 }

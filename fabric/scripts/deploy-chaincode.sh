@@ -141,16 +141,16 @@ docker exec cli peer chaincode invoke \
     --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
     --peerAddresses peer0.org1.example.com:7051 \
     --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
-    -c '{"function":"RegisterVehicle","Args":["test-vehicle-001","VIN123TEST","owner-001"]}' \
+    -c '{"function":"SubmitTelemetry","Args":["vehicle-001","{\"speed\":120,\"location\":\"GPS_DATA\"}"]}' \
     --waitForEvent
 
 sleep 2
 
-print_step "Querying test vehicle..."
+print_step "Querying telemetry for test vehicle..."
 docker exec cli peer chaincode query \
     --channelID $CHANNEL_NAME \
     --name $CHAINCODE_NAME \
-    -c '{"function":"ReadVehicle","Args":["test-vehicle-001"]}'
+    -c '{"function":"GetTelemetryByVehicle","Args":["vehicle-001"]}'
 
 echo ""
 print_step "Chaincode deployed successfully using ccaas!"
