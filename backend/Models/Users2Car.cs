@@ -11,6 +11,8 @@ public partial class Users2Car
 
     public int CarId { get; set; }
 
+    public string RoleCode { get; set; } = null!;
+
     public DateTime? AssignedAt { get; set; }
 
     public virtual CarTable Car { get; set; } = null!;

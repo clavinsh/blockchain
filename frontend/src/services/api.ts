@@ -73,6 +73,7 @@ export interface UserCar {
   color?: string;
   mileage: number;
   assignedAt?: string;
+  roleCode: string;
 }
 
 export interface GetUserCarsResponse {
@@ -92,6 +93,33 @@ export interface GetCarDataResponse {
   success: boolean;
   message: string;
   data?: CarDataItem[];
+}
+
+export interface CarUser {
+  id: number;
+  userId: number;
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  roleCode: string;
+  assignedAt?: string;
+}
+
+export interface CreateCarRequest {
+  brand: string;
+  model: string;
+  year: number;
+  licensePlate?: string;
+  vin?: string;
+  color?: string;
+  mileage?: number;
+}
+
+export interface CreateCarResponse {
+  success: boolean;
+  message: string;
+  carId?: number;
 }
 
 export const carApi = {
@@ -125,6 +153,50 @@ export const carApi = {
     } catch (error) {
       console.error('Fetch error details:', error);
       throw error;
+    }
+  },
+
+  getCarUsers: async (carId: number): Promise<CarUser[]> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars/${carId}/users`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch car users');
+    }
+
+    const data = await response.json();
+    return data.users;
+  },
+
+  removeCarUser: async (carId: number, userCarId: number): Promise<void> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars/${carId}/users/${userCarId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to remove user access');
     }
   },
 
@@ -167,6 +239,197 @@ export const carApi = {
 
     if (!response.ok) {
       throw new Error('Failed to fetch car data');
+    }
+
+    return response.json();
+  },
+
+  createCar: async (carData: CreateCarRequest): Promise<CreateCarResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(carData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create car');
+    }
+
+    return response.json();
+  },
+};
+
+// Car Invites
+export interface CreateInviteRequest {
+  carId: number;
+  invitedUserEmail: string;
+  roleCode: 'OWNER' | 'DRIVER' | 'VIEWER';
+}
+
+export interface InviteResponse {
+  inviteId: number;
+  carId: number;
+  carBrand: string;
+  carModel: string;
+  carYear: number;
+  inviterUsername: string;
+  inviterEmail: string;
+  invitedUsername: string;
+  invitedEmail: string;
+  roleCode: string;
+  inviteStatus: string;
+  createdAt?: string;
+}
+
+export interface InviteActionResponse {
+  success: boolean;
+  message: string;
+  invite?: InviteResponse;
+}
+
+export const inviteApi = {
+  createInvite: async (request: CreateInviteRequest): Promise<InviteActionResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/carinvites`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create invite');
+    }
+
+    return response.json();
+  },
+
+  getReceivedInvites: async (): Promise<InviteResponse[]> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/carinvites/received`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch received invites');
+    }
+
+    return response.json();
+  },
+
+  getSentInvites: async (): Promise<InviteResponse[]> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/carinvites/sent`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch sent invites');
+    }
+
+    return response.json();
+  },
+
+  acceptInvite: async (inviteId: number): Promise<InviteActionResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/carinvites/${inviteId}/accept`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to accept invite');
+    }
+
+    return response.json();
+  },
+
+  declineInvite: async (inviteId: number): Promise<InviteActionResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/carinvites/${inviteId}/decline`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to decline invite');
+    }
+
+    return response.json();
+  },
+
+  cancelInvite: async (inviteId: number): Promise<InviteActionResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/carinvites/${inviteId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to cancel invite');
     }
 
     return response.json();

@@ -18,6 +18,8 @@ public partial class BlockchainDbContext : DbContext
 
     public virtual DbSet<CarDataCache> CarDataCaches { get; set; }
 
+    public virtual DbSet<CarInvite> CarInvites { get; set; }
+
     public virtual DbSet<CarTable> CarTables { get; set; }
 
     public virtual DbSet<UserTable> UserTables { get; set; }
@@ -113,6 +115,8 @@ public partial class BlockchainDbContext : DbContext
 
             entity.HasIndex(e => new { e.UserId, e.CarId }, "unique_user_car").IsUnique();
 
+            entity.Property(e => e.RoleCode).HasMaxLength(20);
+
             entity.Property(e => e.AssignedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp");
@@ -124,6 +128,53 @@ public partial class BlockchainDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Users2Cars)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("Users2Cars_ibfk_1");
+        });
+
+        modelBuilder.Entity<CarInvite>(entity =>
+        {
+            entity.HasKey(e => e.InviteId).HasName("PRIMARY");
+
+            entity.ToTable("CarInvites");
+
+            entity.HasIndex(e => e.CarId, "CarId");
+
+            entity.HasIndex(e => e.InviterUserId, "InviterUserId");
+
+            entity.HasIndex(e => e.InvitedUserId, "InvitedUserId");
+
+            // Remove the unique constraint that includes InviteStatus
+            // This constraint was preventing invite status updates
+            entity.HasIndex(e => new { e.CarId, e.InvitedUserId }, "unique_pending_invite").IsUnique();
+
+            entity.Property(e => e.RoleCode).HasMaxLength(20);
+
+            entity.Property(e => e.InviteStatus)
+                .HasMaxLength(20)
+                .HasDefaultValueSql("'PENDING'");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp");
+
+            entity.Property(e => e.UpdatedAt)
+                .ValueGeneratedOnAddOrUpdate()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp");
+
+            entity.HasOne(d => d.Car).WithMany()
+                .HasForeignKey(d => d.CarId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("CarInvites_ibfk_1");
+
+            entity.HasOne(d => d.Inviter).WithMany()
+                .HasForeignKey(d => d.InviterUserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("CarInvites_ibfk_2");
+
+            entity.HasOne(d => d.InvitedUser).WithMany()
+                .HasForeignKey(d => d.InvitedUserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("CarInvites_ibfk_3");
         });
 
         OnModelCreatingPartial(modelBuilder);

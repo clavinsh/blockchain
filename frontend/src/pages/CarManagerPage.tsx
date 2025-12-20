@@ -1,28 +1,317 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useCarContext } from '@/contexts/CarContext'
+import { inviteApi, carApi, type InviteResponse, type CarUser, type CreateCarRequest } from '@/services/api'
 
 export default function CarManagerPage() {
-  const { userCars, selectedCarId, setSelectedCarId } = useCarContext()
+  const { userCars, selectedCarId, setSelectedCarId, setUserCars } = useCarContext()
   const [newInviteEmail, setNewInviteEmail] = useState('')
-  const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'VIEWER'>('VIEWER')
+  const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'DRIVER' | 'VIEWER'>('DRIVER')
+  const [sentInvites, setSentInvites] = useState<InviteResponse[]>([])
+  const [carUsers, setCarUsers] = useState<CarUser[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Car creation state
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newCarData, setNewCarData] = useState<CreateCarRequest>({
+    brand: '',
+    model: '',
+    year: new Date().getFullYear(),
+    licensePlate: '',
+    vin: '',
+    color: '',
+    mileage: 0
+  })
+  const [isCreatingCar, setIsCreatingCar] = useState(false)
 
   const selectedCar = userCars.find(car => car.carId === selectedCarId)
 
-  // For now, we'll assume all users have viewer access since we don't have role in Users2Car yet
-  // You can add a Role field to Users2Car table later
-  const canInviteUsers = true // Can be updated when role system is implemented
+  // Check if current user is an OWNER of the selected car
+  const isOwner = selectedCar?.roleCode === 'OWNER'
+  const canInviteUsers = isOwner
 
-  const handleInvite = () => {
-    // TODO: Implement API call to send invite
-    console.log('Sending invite to:', newInviteEmail, 'with role:', newInviteRole, 'for car:', selectedCarId)
-    alert(`Uzaicinājuma funkcionalitāte tiks pievienota nākotnē.\nE-pasts: ${newInviteEmail}\nLoma: ${newInviteRole}`)
-    setNewInviteEmail('')
+  // Helper function for role display
+  const getRoleDisplay = (roleCode: string) => {
+    switch (roleCode) {
+      case 'OWNER':
+        return { label: 'Īpašnieks', color: 'bg-purple-100 text-purple-800' }
+      case 'DRIVER':
+        return { label: 'Vadītājs', color: 'bg-blue-100 text-blue-800' }
+      case 'VIEWER':
+        return { label: 'Skatītājs', color: 'bg-green-100 text-green-800' }
+      default:
+        return { label: roleCode, color: 'bg-gray-100 text-gray-800' }
+    }
+  }
+
+  const loadSentInvites = async () => {
+    if (!selectedCarId) return
+
+    try {
+      const invites = await inviteApi.getSentInvites()
+      const carInvites = invites.filter(invite => invite.carId === selectedCarId)
+      setSentInvites(carInvites)
+    } catch (err) {
+      console.error('Failed to load sent invites:', err)
+    }
+  }
+
+  const loadCarUsers = async () => {
+    if (!selectedCarId) return
+
+    try {
+      const users = await carApi.getCarUsers(selectedCarId)
+      setCarUsers(users)
+    } catch (err) {
+      console.error('Failed to load car users:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedCarId) {
+      loadSentInvites()
+      loadCarUsers()
+    }
+  }, [selectedCarId])
+
+  const handleInvite = async () => {
+    if (!selectedCarId || !newInviteEmail) return
+
+    setIsLoading(true)
+
+    try {
+      const response = await inviteApi.createInvite({
+        carId: selectedCarId,
+        invitedUserEmail: newInviteEmail,
+        roleCode: newInviteRole,
+      })
+
+      if (response.success) {
+        alert(`Uzaicinājums nosūtīts lietotājam ${newInviteEmail}!`)
+        setNewInviteEmail('')
+        loadSentInvites()
+      }
+    } catch (err: any) {
+      alert(err.message || 'Neizdevās nosūtīt uzaicinājumu')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCancelInvite = async (inviteId: number) => {
+    if (!confirm('Vai tiešām vēlaties atcelt šo uzaicinājumu?')) return
+
+    try {
+      await inviteApi.cancelInvite(inviteId)
+      alert('Uzaicinājums atcelts')
+      loadSentInvites()
+    } catch (err: any) {
+      alert(err.message || 'Neizdevās atcelt uzaicinājumu')
+    }
+  }
+
+  const handleRemoveUser = async (userCarId: number, username: string) => {
+    if (!confirm(`Vai tiešām vēlaties noņemt lietotāja "${username}" piekļuvi šai mašīnai?`)) return
+
+    if (!selectedCarId) return
+
+    try {
+      await carApi.removeCarUser(selectedCarId, userCarId)
+      alert('Lietotāja piekļuve noņemta')
+      loadCarUsers()
+    } catch (err: any) {
+      alert(err.message || 'Neizdevās noņemt lietotāja piekļuvi')
+    }
+  }
+
+  const handleCreateCar = async () => {
+    if (!newCarData.brand || !newCarData.model) {
+      alert('Lūdzu, aizpildiet obligātos laukus (marka un modelis)')
+      return
+    }
+
+    setIsCreatingCar(true)
+
+    try {
+      const response = await carApi.createCar(newCarData)
+      
+      if (response.success) {
+        alert(`Mašīna "${newCarData.brand} ${newCarData.model}" izveidota veiksmīgi!`)
+        
+        // Reset form
+        setNewCarData({
+          brand: '',
+          model: '',
+          year: new Date().getFullYear(),
+          licensePlate: '',
+          vin: '',
+          color: '',
+          mileage: 0
+        })
+        setShowCreateForm(false)
+        
+        // Reload user cars to show the new one
+        const userCarsResponse = await carApi.getUserCars()
+        if (userCarsResponse.success && userCarsResponse.cars) {
+          setUserCars(userCarsResponse.cars)
+        }
+      }
+    } catch (err: any) {
+      let errorMessage = 'Neizdevās izveidot mašīnu'
+      
+      // Handle specific error cases
+      if (err.message.includes('Duplicate') && err.message.includes('VIN')) {
+        errorMessage = 'Šis VIN kods jau tiek izmantots citai mašīnai. Lūdzu, ievadiet citu VIN kodu vai atstājiet lauku tukšu.'
+      } else if (err.message.includes('Duplicate') && err.message.includes('LicensePlate')) {
+        errorMessage = 'Šī numurzīme jau tiek izmantota citai mašīnai. Lūdzu, ievadiet citu numurzīmi.'
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setIsCreatingCar(false)
+    }
   }
 
   return (
     <div>
       <main className="p-6">
+        {/* Create Car Section */}
+        <div className="mb-8 bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Pievienot jaunu mašīnu</h2>
+              <Button 
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                variant="outline"
+              >
+                {showCreateForm ? 'Aizvērt' : 'Pievienot mašīnu'}
+              </Button>
+            </div>
+          </div>
+          
+          {showCreateForm && (
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Marka *
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.brand}
+                    onChange={(e) => setNewCarData({...newCarData, brand: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="BMW, Audi, Mercedes-Benz..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Modelis *
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.model}
+                    onChange={(e) => setNewCarData({...newCarData, model: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="A4, 320d, C220d..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Gads
+                  </label>
+                  <input
+                    type="number"
+                    value={newCarData.year}
+                    onChange={(e) => setNewCarData({...newCarData, year: parseInt(e.target.value)})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Numurzīme
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.licensePlate}
+                    onChange={(e) => setNewCarData({...newCarData, licensePlate: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="LV-1234"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    VIN
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.vin}
+                    onChange={(e) => setNewCarData({...newCarData, vin: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="17 simboli"
+                    maxLength={17}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Krāsa
+                  </label>
+                  <input
+                    type="text"
+                    value={newCarData.color}
+                    onChange={(e) => setNewCarData({...newCarData, color: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Melna, Balta, Sudraba..."
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nobraukums (km)
+                  </label>
+                  <input
+                    type="number"
+                    value={newCarData.mileage}
+                    onChange={(e) => setNewCarData({...newCarData, mileage: parseInt(e.target.value) || 0})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="0"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateForm(false)}
+                  disabled={isCreatingCar}
+                >
+                  Atcelt
+                </Button>
+                <Button
+                  onClick={handleCreateCar}
+                  disabled={isCreatingCar || !newCarData.brand || !newCarData.model}
+                >
+                  {isCreatingCar ? 'Izveido...' : 'Izveidot mašīnu'}
+                </Button>
+              </div>
+              
+              <p className="text-xs text-gray-500 mt-3">
+                * Obligātie lauki. Pēc mašīnas izveidošanas jūs automātiski kļūstat par tās īpašnieku.
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* My Cars Section */}
         <div className="mb-8 bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -92,17 +381,18 @@ export default function CarManagerPage() {
                     />
                     <select
                       value={newInviteRole}
-                      onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'VIEWER')}
+                      onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'DRIVER' | 'VIEWER')}
                       className="border border-gray-300 rounded-md px-3 py-2"
                     >
                       <option value="OWNER">Īpašnieks</option>
+                      <option value="DRIVER">Vadītājs</option>
                       <option value="VIEWER">Skatītājs</option>
                     </select>
                     <Button
                       onClick={handleInvite}
-                      disabled={!newInviteEmail}
+                      disabled={!newInviteEmail || isLoading}
                     >
-                      Uzaicināt
+                      {isLoading ? 'Sūta...' : 'Uzaicināt'}
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
@@ -111,24 +401,98 @@ export default function CarManagerPage() {
                 </div>
               )}
 
-              {/* Current Users List */}
+              {/* Current Users */}
               <div className="mb-6">
                 <h3 className="text-md font-semibold text-gray-900 mb-3">Pašreizējie lietotāji</h3>
                 <div className="space-y-3">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">
-                      Lietotāju pārvaldības funkcionalitāte tiks pievienota nākotnē.
-                    </p>
-                    {/* <p className="text-sm text-gray-600 mt-2">
-                      Lai to īstenotu, ir nepieciešams:
-                    </p>
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
-                      <li>Pievienot Role lauku Users2Car tabulā</li>
-                      <li>Izveidot API endpoint lietotāju uzaicinājumiem</li>
-                      <li>Izveidot API endpoint esošo lietotāju sarakstam</li>
-                      <li>Izveidot paziņojumu sistēmu uzaicinājumiem</li>
-                    </ul> */}
-                  </div>
+                  {carUsers.length === 0 ? (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">
+                        Nav lietotāju ar piekļuvi šai mašīnai.
+                      </p>
+                    </div>
+                  ) : (
+                    carUsers.map((user) => (
+                      <div key={user.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-gray-900">
+                                {user.username} ({user.email})
+                              </span>
+                              <span className={`px-2 py-1 text-xs rounded-full ${getRoleDisplay(user.roleCode).color}`}>
+                                {getRoleDisplay(user.roleCode).label}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              {user.firstName && user.lastName && `${user.firstName} ${user.lastName} • `}
+                              Pievienots: {user.assignedAt ? new Date(user.assignedAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
+                            </div>
+                          </div>
+                          {isOwner && (
+                            <Button
+                              onClick={() => handleRemoveUser(user.id, user.username)}
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              Noņemt
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Sent Invites */}
+              <div className="mb-6">
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Nosūtītie uzaicinājumi</h3>
+                <div className="space-y-3">
+                  {sentInvites.length === 0 ? (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">
+                        Nav nosūtītu uzaicinājumu šai mašīnai.
+                      </p>
+                    </div>
+                  ) : (
+                    sentInvites.map((invite) => (
+                      <div key={invite.inviteId} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-gray-900">{invite.invitedEmail}</span>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                invite.inviteStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                invite.inviteStatus === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
+                                invite.inviteStatus === 'DECLINED' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {invite.inviteStatus === 'PENDING' ? 'Gaida' :
+                                 invite.inviteStatus === 'ACCEPTED' ? 'Pieņemts' :
+                                 invite.inviteStatus === 'DECLINED' ? 'Noraidīts' :
+                                 'Atcelts'}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              Loma: {getRoleDisplay(invite.roleCode).label} •
+                              Nosūtīts: {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
+                            </div>
+                          </div>
+                          {invite.inviteStatus === 'PENDING' && isOwner && (
+                            <Button
+                              onClick={() => handleCancelInvite(invite.inviteId)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Atcelt
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
