@@ -381,51 +381,6 @@ public class CarsController : ControllerBase
         return Ok(new { success = true, users });
     }
 
-    [HttpDelete("{carId}/users/{userCarId}")]
-    public async Task<ActionResult> RemoveCarUser(int carId, int userCarId)
-    {
-        var userId = GetCurrentUserId();
-        if (userId == null)
-        {
-            return Unauthorized(new { success = false, message = "Invalid authentication token" });
-        }
-
-        // Check if current user has access to this car and verify they are an OWNER
-        var currentUserCarRelation = await _context.Users2Cars
-            .FirstOrDefaultAsync(uc => uc.UserId == userId.Value && uc.CarId == carId);
-
-        if (currentUserCarRelation == null)
-        {
-            return Forbid();
-        }
-
-        // Only OWNER and MASTER_OWNER roles can remove users
-        if (currentUserCarRelation.RoleCode != "OWNER" && currentUserCarRelation.RoleCode != "MASTER_OWNER")
-        {
-            return StatusCode(403, new { success = false, message = "Tikai īpašnieki var noņemt lietotājus no mašīnas" });
-        }
-
-        // Get the user-car relation to remove
-        var userCarRelation = await _context.Users2Cars
-            .FirstOrDefaultAsync(uc => uc.Id == userCarId && uc.CarId == carId);
-
-        if (userCarRelation == null)
-        {
-            return NotFound(new { success = false, message = "User access not found" });
-        }
-
-        // Prevent user from removing themselves
-        if (userCarRelation.UserId == userId)
-        {
-            return BadRequest(new { success = false, message = "Cannot remove your own access" });
-        }
-
-        _context.Users2Cars.Remove(userCarRelation);
-        await _context.SaveChangesAsync();
-
-        return Ok(new { success = true, message = "User access removed successfully" });
-    }
-
     [HttpPost("{carId}/transfer-ownership")]
     public async Task<ActionResult<TransferOwnershipResponse>> TransferOwnership(int carId, [FromBody] TransferOwnershipRequest request)
     {

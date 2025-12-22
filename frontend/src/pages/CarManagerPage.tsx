@@ -6,11 +6,11 @@ import { inviteApi, carApi, deleteCar, type InviteResponse, type CarUser, type C
 export default function CarManagerPage() {
   const { userCars, selectedCarId, setSelectedCarId, setUserCars } = useCarContext()
   const [newInviteEmail, setNewInviteEmail] = useState('')
-  const [newInviteRole, setNewInviteRole] = useState<'VIEWER'>('VIEWER')
+  const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'VIEWER'>('OWNER')
   const [sentInvites, setSentInvites] = useState<InviteResponse[]>([])
   const [carUsers, setCarUsers] = useState<CarUser[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // Car creation state
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingCar, setEditingCar] = useState<UserCar | null>(null)
@@ -326,8 +326,25 @@ export default function CarManagerPage() {
       
       if (response.success) {
         alert(response.message)
-        // Reload car users
+        
+        // Check if user removed their own access
+        const currentUserEmail = user.email // You might want to get this from auth context
+        
+        // Reload car users first
         loadCarUsers()
+        
+        // If user removed themselves, refresh the cars list and potentially clear selection
+        const userCarsResponse = await carApi.getUserCars()
+        if (userCarsResponse.success && userCarsResponse.cars) {
+          setUserCars(userCarsResponse.cars)
+          
+          // If the current car is no longer accessible, clear selection
+          const stillHasAccess = userCarsResponse.cars.some(car => car.carId === selectedCarId)
+          if (!stillHasAccess) {
+            setSelectedCarId(null)
+            alert('Jūsu piekļuve šai mašīnai ir noņemta. Jūs tiksiet novirzīts uz savu mašīnu sarakstu.')
+          }
+        }
       }
     } catch (err: any) {
       alert(err.message || 'Neizdevās noņemt lietotāja piekļuvi')
@@ -674,27 +691,39 @@ export default function CarManagerPage() {
             <div className="p-6">
               {/* Add New Access */}
               {canInviteUsers && (
-                <div className="mb-6">
-                  <h3 className="text-md font-semibold text-gray-900 mb-3">Uzaicināt apskatītāju</h3>
-                  <div className="flex space-x-4">
-                    <input
-                      type="email"
-                      placeholder="Apskatītāja e-pasts"
-                      value={newInviteEmail}
-                      onChange={(e) => setNewInviteEmail(e.target.value)}
-                      className="flex-1 border border-green-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                    <Button
-                      onClick={handleInvite}
-                      disabled={!newInviteEmail || isLoading}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      {isLoading ? 'Sūta...' : 'Uzaicināt apskatītāju'}
-                    </Button>
+                <div className="mb-6 space-y-6">
+                  {/* Invite User Section */}
+                  <div>
+                    <h3 className="text-md font-semibold text-gray-900 mb-3">Uzaicināt lietotāju</h3>
+                    <div className="flex space-x-4">
+                      <input
+                        type="email"
+                        placeholder="Īpašnieka e-pasts"
+                        value={newInviteEmail}
+                        onChange={(e) => setNewInviteEmail(e.target.value)}
+                        className="flex-1 border border-blue-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <select
+                        value={newInviteRole}
+                        onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'VIEWER')}
+                        className="border border-blue-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="OWNER">Īpašnieks</option>
+                        <option value="VIEWER">Apskatītājs</option>
+                      </select>
+                      <Button
+                        onClick={handleInvite}
+                        disabled={!newInviteEmail || isLoading}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {isLoading ? 'Sūta...' : 'Uzaicināt'}
+                      </Button>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-500 space-y-1">
+                      <p><strong>Īpašnieks:</strong> Var pārvaldīt mašīnas informāciju, uzaicināt citus lietotājus un mainīt to lomas</p>
+                      <p><strong>Apskatītājs:</strong> Var tikai skatīt mašīnas informāciju (vēlāk var tikt paaugstināts par īpašnieku)</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Apskatītājs saņems uzaicinājumu un varēs tikai skatīt mašīnas informāciju
-                  </p>
                 </div>
               )}
 
@@ -752,7 +781,7 @@ export default function CarManagerPage() {
                                     <Button
                                       onClick={() => handleChangeUserRole(user.userId, roleChanges[user.userId])}
                                       size="sm"
-                                      className="text-xs px-2 py-1 h-6"
+                                      className="text-xs px-2 py-1 h-6 bg-blue-600 hover:bg-blue-700 text-white border border-blue-600 hover:border-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                                       disabled={isChangingRole[user.userId]}
                                     >
                                       {isChangingRole[user.userId] ? 'Maina...' : 'Mainīt'}

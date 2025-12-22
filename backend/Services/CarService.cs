@@ -433,11 +433,22 @@ public class CarService
                 return false;
             }
 
-            // Prevent users from removing themselves
-            if (requesterId == targetUserId)
+            // Allow users to remove their own access if they're not MASTER_OWNER
+            // But prevent OWNER from removing themselves if they're the last OWNER
+            if (requesterId == targetUserId && targetRelation.RoleCode == "OWNER")
             {
-                _logger.LogWarning("Users cannot remove their own access");
-                return false;
+                // Check if there are other OWNERs or MASTER_OWNERs
+                var otherManagers = await _context.Users2Cars
+                    .Where(uc => uc.CarId == carId && 
+                                uc.UserId != targetUserId && 
+                                (uc.RoleCode == "OWNER" || uc.RoleCode == "MASTER_OWNER"))
+                    .CountAsync();
+
+                if (otherManagers == 0)
+                {
+                    _logger.LogWarning("Cannot remove last manager from car {CarId}", carId);
+                    return false;
+                }
             }
 
             // Remove the relation

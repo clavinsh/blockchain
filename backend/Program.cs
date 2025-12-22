@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using backend.Models;
 using backend.Services;
+using backend.Services.Fabric;
 
 // Prevent default claim type mapping
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -65,6 +66,10 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<CarService>();
 builder.Services.AddScoped<TelemetryDataService>();
+
+// Register Fabric blockchain services
+builder.Services.AddFabricServices(builder.Configuration);
+
 
 var app = builder.Build();
 

@@ -562,13 +562,12 @@ export const carApi = {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${API_BASE_URL}/cars/${carId}/remove-access`, {
+      const response = await fetch(`${API_BASE_URL}/cars/${carId}/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ carId, userId }),
       });
 
       if (!response.ok) {
