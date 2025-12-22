@@ -601,7 +601,7 @@ export const carApi = {
   }
 };
 
-// Delete car (MASTER_OWNER only)
+// Delete car (OWNER only)
 export const deleteCar = async (carId: number): Promise<boolean> => {
   try {
     const token = tokenManager.getToken();
@@ -653,7 +653,7 @@ export interface RoleChangeResponse {
 export interface CreateInviteRequest {
   carId: number;
   invitedUserEmail: string;
-  roleCode: 'OWNER' | 'VIEWER';
+  roleCode: 'OWNER' | 'DRIVER' | 'VIEWER';
 }
 
 export interface InviteResponse {
@@ -844,6 +844,296 @@ export const inviteApi = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Neizdevās atcelt uzaicinājumu');
+    }
+
+    return response.json();
+  },
+};
+
+// Blockchain Telemetry Interfaces
+export interface VehicleTelemetry {
+  carId: string;
+  carData: string;
+  insertTime: string;
+}
+
+export interface DrivingEvent {
+  timestamp: string;
+  latitude: number;
+  longitude: number;
+  severity: 'Low' | 'Medium' | 'High';
+  speed: number;
+  description: string;
+}
+
+export interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+
+export interface BasicStatistics {
+  totalDistance: number;
+  totalDrivingTime: string;
+  averageSpeed: number;
+  maxSpeed: number;
+  averageRpm: number;
+  maxRpm: number;
+  fuelConsumption: number;
+  numberOfTrips: number;
+  dataPointsAnalyzed: number;
+}
+
+export interface DrivingBehaviorAnalysis {
+  harshBrakingEvents: DrivingEvent[];
+  harshAccelerationEvents: DrivingEvent[];
+  harshCorneringEvents: DrivingEvent[];
+  speedingEvents: DrivingEvent[];
+  overRevvingEvents: DrivingEvent[];
+  smoothDrivingPercentage: number;
+}
+
+export interface RiskAssessment {
+  overallRiskLevel: 'VeryLow' | 'Low' | 'Moderate' | 'High' | 'VeryHigh';
+  insurancePremiumMultiplier: number;
+  accidentRiskScore: number;
+  vehicleDepreciationRate: number;
+  riskFactors: string[];
+  positiveFactors: string[];
+}
+
+export interface VehicleWearEstimate {
+  brakeWearLevel: 'Low' | 'Moderate' | 'High' | 'Severe';
+  engineWearLevel: 'Low' | 'Moderate' | 'High' | 'Severe';
+  tireWearLevel: 'Low' | 'Moderate' | 'High' | 'Severe';
+  transmissionStress: number;
+  estimatedMaintenanceCost: number;
+}
+
+export interface DrivingReport {
+  carId: string;
+  reportGeneratedAt: string;
+  analysisPeriod: DateRange;
+  basicStatistics: BasicStatistics;
+  drivingBehavior: DrivingBehaviorAnalysis;
+  overallDrivingScore: number;
+  riskAssessment: RiskAssessment;
+  vehicleWearEstimate: VehicleWearEstimate;
+  recommendations: string[];
+}
+
+export interface InsuranceSummary {
+  vehicleId: string;
+  analysisPeriod: DateRange;
+  drivingScore: number;
+  riskLevel: 'VeryLow' | 'Low' | 'Moderate' | 'High' | 'VeryHigh';
+  recommendedPremiumMultiplier: number;
+  safetyIncidents: number;
+  totalDistance: number;
+  smoothDrivingPercentage: number;
+}
+
+export interface ResellerSummary {
+  vehicleId: string;
+  analysisPeriod: DateRange;
+  totalDistance: number;
+  drivingScore: number;
+  vehicleConditionRating: string;
+  estimatedDepreciationRate: number;
+  brakeCondition: 'Low' | 'Moderate' | 'High' | 'Severe';
+  engineCondition: 'Low' | 'Moderate' | 'High' | 'Severe';
+  tireCondition: 'Low' | 'Moderate' | 'High' | 'Severe';
+  estimatedMaintenanceCost: number;
+  recommendedActions: string[];
+}
+
+// Blockchain Telemetry API
+export const telemetryApi = {
+  /**
+   * Get blockchain telemetry data for a specific vehicle
+   */
+  getBlockchainTelemetry: async (carId: number): Promise<VehicleTelemetry[]> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log(`[API] Fetching blockchain telemetry for car ${carId} from ${API_BASE_URL}/telemetry/blockchain/${carId}`);
+
+    const response = await fetch(`${API_BASE_URL}/telemetry/blockchain/${carId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    console.log(`[API] Response status: ${response.status} ${response.statusText}`);
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch blockchain telemetry data';
+      try {
+        const errorData = await response.json();
+        console.error('[API] Error response:', errorData);
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (parseError) {
+        // If JSON parsing fails, use status text
+        console.error('[API] Failed to parse error response:', parseError);
+        errorMessage = `HTTP ${response.status}: ${response.statusText || 'Failed to fetch blockchain telemetry data'}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    console.log(`[API] Successfully fetched ${data.length} telemetry records`);
+    return data;
+  },
+
+  /**
+   * Get blockchain telemetry data for a specific vehicle within a time range
+   */
+  getBlockchainTelemetryByTimeRange: async (
+    carId: number,
+    startTime?: Date,
+    endTime?: Date
+  ): Promise<VehicleTelemetry[]> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const params = new URLSearchParams();
+    if (startTime) {
+      params.append('startTime', startTime.toISOString());
+    }
+    if (endTime) {
+      params.append('endTime', endTime.toISOString());
+    }
+
+    const url = `${API_BASE_URL}/telemetry/blockchain/${carId}/range${params.toString() ? `?${params.toString()}` : ''}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch blockchain telemetry data');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get comprehensive driving behavior report
+   */
+  getDrivingReport: async (
+    carId: number,
+    from: Date,
+    to: Date
+  ): Promise<DrivingReport> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const params = new URLSearchParams({
+      carId: carId.toString(),
+      from: from.toISOString(),
+      to: to.toISOString(),
+    });
+
+    const response = await fetch(`${API_BASE_URL}/telemetry/report?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        const error = await response.json();
+        throw new Error(error.message || 'Access denied');
+      }
+      throw new Error('Failed to fetch driving report');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get insurance summary report
+   */
+  getInsuranceSummary: async (
+    carId: number,
+    from: Date,
+    to: Date
+  ): Promise<InsuranceSummary> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const params = new URLSearchParams({
+      carId: carId.toString(),
+      from: from.toISOString(),
+      to: to.toISOString(),
+    });
+
+    const response = await fetch(`${API_BASE_URL}/telemetry/insurance-summary?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch insurance summary');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get reseller summary report
+   */
+  getResellerSummary: async (
+    carId: number,
+    from: Date,
+    to: Date
+  ): Promise<ResellerSummary> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const params = new URLSearchParams({
+      carId: carId.toString(),
+      from: from.toISOString(),
+      to: to.toISOString(),
+    });
+
+    const response = await fetch(`${API_BASE_URL}/telemetry/reseller-summary?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch reseller summary');
     }
 
     return response.json();
