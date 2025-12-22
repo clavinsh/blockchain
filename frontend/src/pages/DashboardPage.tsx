@@ -60,7 +60,7 @@ export default function DashboardPage() {
           {selectedCar.brand} {selectedCar.model} ({selectedCar.year})
         </h2>
         <p className="text-gray-600">
-          Numurzīme: {selectedCar.licensePlate} | Nobraukums: {selectedCar.mileage.toLocaleString()} km
+          Numurzīme: {selectedCar.licensePlate}
         </p>
       </div>
 

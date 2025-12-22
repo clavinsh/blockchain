@@ -69,13 +69,13 @@ public class CarInvitesController : ControllerBase
             return Forbid();
         }
 
-        // Only OWNER role can send invites
-        if (userCarRelation.RoleCode != "OWNER")
+        // Only OWNER and MASTER_OWNER roles can send invites
+        if (userCarRelation.RoleCode != "OWNER" && userCarRelation.RoleCode != "MASTER_OWNER")
         {
             return StatusCode(403, new InviteActionResponse
             {
                 Success = false,
-                Message = "Only owners can send invites"
+                Message = "Tikai īpašnieki var sūtīt uzaicinājumus"
             });
         }
 
@@ -131,12 +131,12 @@ public class CarInvitesController : ControllerBase
         }
 
         // Validate role code
-        if (request.RoleCode != "OWNER" && request.RoleCode != "DRIVER")
+        if (request.RoleCode != "OWNER" && request.RoleCode != "VIEWER")
         {
             return BadRequest(new InviteActionResponse
             {
                 Success = false,
-                Message = "Invalid role code. Must be OWNER or DRIVER"
+                Message = "Nepareiza lomas kods. Jābūt OWNER vai VIEWER"
             });
         }
 
@@ -268,49 +268,22 @@ public class CarInvitesController : ControllerBase
                     oldInvites.Count, invite.InvitedUserId, invite.CarId);
             }
 
-            // If the invite is for OWNER role, transfer full ownership
-            if (invite.RoleCode == "OWNER")
+            // Add user access for any role (OWNER or VIEWER)
+            // Check if user already has access to this car
+            var existingAccess = await _context.Users2Cars
+                .FirstOrDefaultAsync(uc => uc.UserId == invite.InvitedUserId && uc.CarId == invite.CarId);
+
+            if (existingAccess != null)
             {
-                // Remove ALL existing user access to this car (including the old owner)
-                var allExistingAccess = await _context.Users2Cars
-                    .Where(uc => uc.CarId == invite.CarId)
-                    .ToListAsync();
-
-                _logger.LogInformation("Transferring ownership for car {CarId}. Removing {Count} existing access entries.",
-                    invite.CarId, allExistingAccess.Count);
-
-                _context.Users2Cars.RemoveRange(allExistingAccess);
-
-                // Add the new owner
-                var newOwnerRelation = new Users2Car
-                {
-                    UserId = invite.InvitedUserId,
-                    CarId = invite.CarId,
-                    RoleCode = "OWNER",
-                    AssignedAt = DateTime.UtcNow
-                };
-
-                _context.Users2Cars.Add(newOwnerRelation);
-
-                _logger.LogInformation("New owner {UserId} added for car {CarId}",
-                    invite.InvitedUserId, invite.CarId);
+                // Update existing role
+                existingAccess.RoleCode = invite.RoleCode;
+                existingAccess.AssignedAt = DateTime.UtcNow;
+                _logger.LogInformation("Updated existing access for user {UserId} on car {CarId} to role {Role}",
+                    invite.InvitedUserId, invite.CarId, invite.RoleCode);
             }
             else
             {
-                // Check if user already has access to this car (for non-owner invites)
-                var existingAccess = await _context.Users2Cars
-                    .FirstOrDefaultAsync(uc => uc.UserId == invite.InvitedUserId && uc.CarId == invite.CarId);
-
-                if (existingAccess != null)
-                {
-                    return BadRequest(new InviteActionResponse
-                    {
-                        Success = false,
-                        Message = "User already has access to this car"
-                    });
-                }
-
-                // For non-OWNER roles, just add user to car access
+                // Create new access
                 var userCarRelation = new Users2Car
                 {
                     UserId = invite.InvitedUserId,
@@ -320,6 +293,8 @@ public class CarInvitesController : ControllerBase
                 };
 
                 _context.Users2Cars.Add(userCarRelation);
+                _logger.LogInformation("Added new access for user {UserId} on car {CarId} with role {Role}",
+                    invite.InvitedUserId, invite.CarId, invite.RoleCode);
             }
 
             // Update invite status
@@ -331,9 +306,7 @@ public class CarInvitesController : ControllerBase
             return Ok(new InviteActionResponse
             {
                 Success = true,
-                Message = invite.RoleCode == "OWNER"
-                    ? "Ownership transferred successfully"
-                    : "Invite accepted successfully",
+                Message = "Uzaicinājums pieņemts veiksmīgi",
                 Invite = MapToInviteResponse(invite)
             });
         }
@@ -343,7 +316,7 @@ public class CarInvitesController : ControllerBase
             return StatusCode(500, new InviteActionResponse
             {
                 Success = false,
-                Message = $"Error accepting invite: {ex.Message}"
+                Message = "Kļūda pieņemot uzaicinājumu"
             });
         }
     }

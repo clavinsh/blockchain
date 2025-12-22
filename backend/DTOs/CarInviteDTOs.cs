@@ -4,7 +4,7 @@ public class CreateInviteRequest
 {
     public int CarId { get; set; }
     public string InvitedUserEmail { get; set; } = null!;
-    public string RoleCode { get; set; } = "DRIVER"; // OWNER or DRIVER
+    public string RoleCode { get; set; } = "VIEWER"; // OWNER or VIEWER only
 }
 
 public class InviteResponse

@@ -186,10 +186,53 @@ public class CarsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating car");
+            
+            // Check for specific database constraint violations
+            string errorMessage = "Servera kļūda";
+            
+            // Get the full exception message including inner exceptions
+            string fullMessage = ex.ToString();
+            
+            // Try to detect ANY constraint violation first with broader detection
+            if (fullMessage.ToLower().Contains("constraint") || 
+                fullMessage.ToLower().Contains("unique") || 
+                fullMessage.ToLower().Contains("duplicate") ||
+                fullMessage.ToLower().Contains("sqlite") ||
+                fullMessage.ToLower().Contains("index"))
+            {
+                // Default constraint violation message
+                errorMessage = "Šie dati jau tiek izmantoti citai mašīnai";
+                
+                // Check for specific constraint keys to identify the exact field
+                if (fullMessage.Contains("'CarTable.VIN'") || fullMessage.Contains("key 'VIN'"))
+                {
+                    errorMessage = "Šis VIN kods jau tiek izmantots citai mašīnai";
+                }
+                else if (fullMessage.Contains("'CarTable.LicensePlate'") || fullMessage.Contains("key 'LicensePlate'"))
+                {
+                    errorMessage = "Šī numurzīme jau tiek izmantota citai mašīnai";
+                }
+                // Fallback to checking field names in the exception message
+                else if (fullMessage.ToLower().Contains("vin") && !fullMessage.ToLower().Contains("licenseplate"))
+                {
+                    errorMessage = "Šis VIN kods jau tiek izmantots citai mašīnai";
+                }
+                else if (fullMessage.ToLower().Contains("licenseplate") || fullMessage.ToLower().Contains("license"))
+                {
+                    errorMessage = "Šī numurzīme jau tiek izmantota citai mašīnai";
+                }
+            }
+            else if (fullMessage.Contains("validation") || fullMessage.Contains("invalid"))
+            {
+                errorMessage = "Nepareizi ievadīti dati";
+            }
+            
+            _logger.LogInformation("Returning error message: {ErrorMessage} for exception: {Exception}", errorMessage, fullMessage);
+            
             return StatusCode(500, new CreateCarResponse
             {
                 Success = false,
-                Message = "Servera kļūda"
+                Message = errorMessage
             });
         }
     }
@@ -240,64 +283,51 @@ public class CarsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating car {CarId}", carId);
+            
+            // Check for specific database constraint violations
+            string errorMessage = "Servera kļūda";
+            
+            // Get the full exception message including inner exceptions
+            string fullMessage = ex.ToString();
+            
+            // Try to detect ANY constraint violation first with broader detection
+            if (fullMessage.ToLower().Contains("constraint") || 
+                fullMessage.ToLower().Contains("unique") || 
+                fullMessage.ToLower().Contains("duplicate") ||
+                fullMessage.ToLower().Contains("sqlite") ||
+                fullMessage.ToLower().Contains("index"))
+            {
+                // Default constraint violation message
+                errorMessage = "Šie dati jau tiek izmantoti citai mašīnai";
+                
+                // Check for specific constraint keys to identify the exact field
+                if (fullMessage.Contains("'CarTable.VIN'") || fullMessage.Contains("key 'VIN'"))
+                {
+                    errorMessage = "Šis VIN kods jau tiek izmantots citai mašīnai";
+                }
+                else if (fullMessage.Contains("'CarTable.LicensePlate'") || fullMessage.Contains("key 'LicensePlate'"))
+                {
+                    errorMessage = "Šī numurzīme jau tiek izmantota citai mašīnai";
+                }
+                // Fallback to checking field names in the exception message
+                else if (fullMessage.ToLower().Contains("vin") && !fullMessage.ToLower().Contains("licenseplate"))
+                {
+                    errorMessage = "Šis VIN kods jau tiek izmantots citai mašīnai";
+                }
+                else if (fullMessage.ToLower().Contains("licenseplate") || fullMessage.ToLower().Contains("license"))
+                {
+                    errorMessage = "Šī numurzīme jau tiek izmantota citai mašīnai";
+                }
+            }
+            else if (fullMessage.Contains("validation") || fullMessage.Contains("invalid"))
+            {
+                errorMessage = "Nepareizi ievadīti dati";
+            }
+            
             return StatusCode(500, new UpdateCarResponse
             {
                 Success = false,
-                Message = "Servera kļūda"
-            });
-        }
-    }
-
-    [HttpDelete("{carId}")]
-    public async Task<ActionResult<DeleteCarResponse>> DeleteCar(int carId)
-    {
-        try
-        {
-            // Extract user ID from JWT token
-            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                           ?? User.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                return Unauthorized(new DeleteCarResponse
-                {
-                    Success = false,
-                    Message = "Nederīgs autentifikācijas tokens"
-                });
-            }
-
-            // Check if user has access to this car
-            var hasAccess = await _carService.UserHasAccessToCarAsync(userId, carId);
-            if (!hasAccess)
-            {
-                return Forbid();
-            }
-
-            var success = await _carService.DeleteCarAsync(carId);
-
-            if (!success)
-            {
-                return NotFound(new DeleteCarResponse
-                {
-                    Success = false,
-                    Message = "Mašīna nav atrasta"
-                });
-            }
-
-            return Ok(new DeleteCarResponse
-            {
-                Success = true,
-                Message = "Mašīna dzēsta veiksmīgi"
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting car {CarId}", carId);
-            return StatusCode(500, new DeleteCarResponse
-            {
-                Success = false,
-                Message = "Servera kļūda"
+                Message = errorMessage
             });
         }
     }
@@ -369,10 +399,10 @@ public class CarsController : ControllerBase
             return Forbid();
         }
 
-        // Only OWNER role can remove users
-        if (currentUserCarRelation.RoleCode != "OWNER")
+        // Only OWNER and MASTER_OWNER roles can remove users
+        if (currentUserCarRelation.RoleCode != "OWNER" && currentUserCarRelation.RoleCode != "MASTER_OWNER")
         {
-            return StatusCode(403, new { success = false, message = "Only owners can remove users from the car" });
+            return StatusCode(403, new { success = false, message = "Tikai īpašnieki var noņemt lietotājus no mašīnas" });
         }
 
         // Get the user-car relation to remove
@@ -394,5 +424,304 @@ public class CarsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { success = true, message = "User access removed successfully" });
+    }
+
+    [HttpPost("{carId}/transfer-ownership")]
+    public async Task<ActionResult<TransferOwnershipResponse>> TransferOwnership(int carId, [FromBody] TransferOwnershipRequest request)
+    {
+        try
+        {
+            // Extract user ID from JWT token
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new TransferOwnershipResponse
+                {
+                    Success = false,
+                    Message = "Nederīgs autentifikācijas tokens"
+                });
+            }
+
+            // Validate input
+            if (string.IsNullOrWhiteSpace(request.NewOwnerEmail))
+            {
+                return BadRequest(new TransferOwnershipResponse
+                {
+                    Success = false,
+                    Message = "Jaunā īpašnieka e-pasta adrese ir obligāta"
+                });
+            }
+
+            // Check if current user is MASTER_OWNER
+            var isMasterOwner = await _carService.IsMasterOwnerAsync(userId, carId);
+            if (!isMasterOwner)
+            {
+                return Forbid();
+            }
+
+            // Find new owner by email
+            var newOwner = await _carService.GetUserByEmailAsync(request.NewOwnerEmail);
+            if (newOwner == null)
+            {
+                return NotFound(new TransferOwnershipResponse
+                {
+                    Success = false,
+                    Message = "Lietotājs ar šādu e-pasta adresi neeksistē"
+                });
+            }
+
+            // Prevent transferring to self
+            if (newOwner.UserId == userId)
+            {
+                return BadRequest(new TransferOwnershipResponse
+                {
+                    Success = false,
+                    Message = "Nevar nodot īpašumtiesības sev"
+                });
+            }
+
+            // Transfer ownership
+            var success = await _carService.TransferOwnershipAsync(carId, userId, newOwner.UserId);
+            
+            if (!success)
+            {
+                return StatusCode(500, new TransferOwnershipResponse
+                {
+                    Success = false,
+                    Message = "Neizdevās nodot īpašumtiesības"
+                });
+            }
+
+            return Ok(new TransferOwnershipResponse
+            {
+                Success = true,
+                Message = $"Īpašumtiesības veiksmīgi nodotas lietotājam {request.NewOwnerEmail}"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error transferring ownership of car {CarId}", carId);
+            
+            return StatusCode(500, new TransferOwnershipResponse
+            {
+                Success = false,
+                Message = "Servera kļūda. Lūdzu mēģiniet vēlāk"
+            });
+        }
+    }
+
+    [HttpPost("{carId}/change-role")]
+    public async Task<ActionResult<ChangeUserRoleResponse>> ChangeUserRole(int carId, [FromBody] ChangeUserRoleRequest request)
+    {
+        try
+        {
+            // Extract user ID from JWT token
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new ChangeUserRoleResponse
+                {
+                    Success = false,
+                    Message = "Nederīgs autentifikācijas tokens"
+                });
+            }
+
+            // Validate input
+            if (request.UserId <= 0 || string.IsNullOrWhiteSpace(request.NewRole))
+            {
+                return BadRequest(new ChangeUserRoleResponse
+                {
+                    Success = false,
+                    Message = "Nepareizi ievadīti dati"
+                });
+            }
+
+            // Change the role
+            var success = await _carService.ChangeUserRoleAsync(carId, userId, request.UserId, request.NewRole.ToUpper());
+            
+            if (!success)
+            {
+                return BadRequest(new ChangeUserRoleResponse
+                {
+                    Success = false,
+                    Message = "Neizdevās mainīt lietotāja lomu"
+                });
+            }
+
+            return Ok(new ChangeUserRoleResponse
+            {
+                Success = true,
+                Message = $"Lietotāja loma veiksmīgi mainīta uz {request.NewRole}"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error changing user role for car {CarId}", carId);
+            
+            return StatusCode(500, new ChangeUserRoleResponse
+            {
+                Success = false,
+                Message = "Servera kļūda. Lūdzu mēģiniet vēlāk"
+            });
+        }
+    }
+
+    [HttpPost("{carId}/assign-viewer")]
+    public async Task<ActionResult<AssignViewerResponse>> AssignViewer(int carId, [FromBody] AssignViewerRequest request)
+    {
+        try
+        {
+            // Extract user ID from JWT token
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new AssignViewerResponse
+                {
+                    Success = false,
+                    Message = "Nederīgs autentifikācijas tokens"
+                });
+            }
+
+            // Validate input
+            if (string.IsNullOrWhiteSpace(request.ViewerEmail))
+            {
+                return BadRequest(new AssignViewerResponse
+                {
+                    Success = false,
+                    Message = "Skatītāja e-pasta adrese ir obligāta"
+                });
+            }
+
+            // Assign viewer role
+            var success = await _carService.AssignViewerRoleAsync(carId, userId, request.ViewerEmail);
+            
+            if (!success)
+            {
+                return BadRequest(new AssignViewerResponse
+                {
+                    Success = false,
+                    Message = "Neizdevās piešķirt skatītāja lomu"
+                });
+            }
+
+            return Ok(new AssignViewerResponse
+            {
+                Success = true,
+                Message = $"Skatītāja loma veiksmīgi piešķirta lietotājam {request.ViewerEmail}"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assigning viewer role for car {CarId}", carId);
+            
+            return StatusCode(500, new AssignViewerResponse
+            {
+                Success = false,
+                Message = "Servera kļūda. Lūdzu mēģiniet vēlāk"
+            });
+        }
+    }
+
+    [HttpDelete("{carId}/users/{targetUserId}")]
+    public async Task<ActionResult> RemoveUserAccess(int carId, int targetUserId)
+    {
+        try
+        {
+            // Extract user ID from JWT token
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new { success = false, message = "Nederīgs autentifikācijas tokens" });
+            }
+
+            // Remove user access
+            var success = await _carService.RemoveUserAccessAsync(carId, userId, targetUserId);
+            
+            if (!success)
+            {
+                return BadRequest(new { success = false, message = "Neizdevās noņemt lietotāja piekļuvi" });
+            }
+
+            return Ok(new { success = true, message = "Lietotāja piekļuve veiksmīgi noņemta" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing user access for car {CarId}", carId);
+            
+            return StatusCode(500, new { success = false, message = "Servera kļūda. Lūdzu mēģiniet vēlāk" });
+        }
+    }
+
+    [HttpDelete("{carId}")]
+    public async Task<ActionResult> DeleteCar(int carId)
+    {
+        try
+        {
+            // Extract user ID from JWT token
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new { success = false, message = "Nederīgs autentifikācijas tokens" });
+            }
+
+            // Check if user is MASTER_OWNER of this car
+            var userCarRelation = await _context.Users2Cars
+                .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.CarId == carId);
+
+            if (userCarRelation == null || userCarRelation.RoleCode != "MASTER_OWNER")
+            {
+                return StatusCode(403, new { success = false, message = "Tikai galvenais īpašnieks var dzēst mašīnu" });
+            }
+
+            // Delete all related data
+            // 1. Remove all user access
+            var allUserAccess = await _context.Users2Cars
+                .Where(uc => uc.CarId == carId)
+                .ToListAsync();
+            _context.Users2Cars.RemoveRange(allUserAccess);
+
+            // 2. Remove all invites
+            var allInvites = await _context.CarInvites
+                .Where(ci => ci.CarId == carId)
+                .ToListAsync();
+            _context.CarInvites.RemoveRange(allInvites);
+
+            // 3. Remove car data cache
+            var carDataCache = await _context.CarDataCaches
+                .Where(cdc => cdc.CarId == carId)
+                .ToListAsync();
+            _context.CarDataCaches.RemoveRange(carDataCache);
+
+            // 4. Finally, delete the car
+            var car = await _context.CarTables.FindAsync(carId);
+            if (car != null)
+            {
+                _context.CarTables.Remove(car);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Mašīna un visi saistītie dati dzēsti veiksmīgi" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting car {CarId}", carId);
+            return StatusCode(500, new { success = false, message = "Servera kļūda dzēšot mašīnu" });
+        }
     }
 }

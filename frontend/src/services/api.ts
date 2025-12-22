@@ -39,7 +39,26 @@ export const authApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      let errorMessage = 'Neizdevās pieteikties';
+      
+      try {
+        const error = await response.json();
+        if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch {
+        if (response.status === 401) {
+          errorMessage = 'Nepareiza e-pasta adrese vai parole';
+        } else if (response.status === 400) {
+          errorMessage = 'Nepareizi ievadīti dati';
+        } else if (response.status >= 500) {
+          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+        } else {
+          errorMessage = response.statusText || errorMessage;
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -55,7 +74,26 @@ export const authApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      let errorMessage = 'Neizdevās reģistrēties';
+      
+      try {
+        const error = await response.json();
+        if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch {
+        if (response.status === 409) {
+          errorMessage = 'Lietotājs ar šādu e-pastu jau eksistē';
+        } else if (response.status === 400) {
+          errorMessage = 'Nepareizi ievadīti dati';
+        } else if (response.status >= 500) {
+          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+        } else {
+          errorMessage = response.statusText || errorMessage;
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -71,7 +109,7 @@ export interface UserCar {
   licensePlate: string;
   vin?: string;
   color?: string;
-  mileage: number;
+  mileage?: number;
   assignedAt?: string;
   roleCode: string;
 }
@@ -146,7 +184,7 @@ export const carApi = {
           statusText: response.statusText,
           body: errorText
         });
-        throw new Error(`Failed to fetch user cars: ${response.status} ${response.statusText}`);
+        throw new Error(`Neizdevās ielādēt mašīnu sarakstu: ${response.status} ${response.statusText}`);
       }
 
       return response.json();
@@ -172,7 +210,7 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch car users');
+      throw new Error('Neizdevās ielādēt mašīnas lietotājus');
     }
 
     const data = await response.json();
@@ -196,7 +234,7 @@ export const carApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to remove user access');
+      throw new Error(error.message || 'Neizdevās noņemt lietotāja piekļuvi');
     }
   },
 
@@ -216,7 +254,7 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch car details');
+      throw new Error('Neizdevās ielādēt mašīnas informāciju');
     }
 
     return response.json();
@@ -238,7 +276,7 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch car data');
+      throw new Error('Neizdevās ielādēt mašīnas datus');
     }
 
     return response.json();
@@ -261,19 +299,362 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create car');
+      console.error('CreateCar API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        url: response.url
+      });
+      
+      let errorMessage = 'Neizdevās izveidot mašīnu';
+      
+      try {
+        // Try to parse JSON response first
+        const error = await response.json();
+        console.error('CreateCar JSON Error:', error);
+        if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch (jsonError) {
+        console.error('CreateCar JSON Parse Failed:', jsonError);
+        // If JSON parsing fails, try to get raw text
+        try {
+          const errorText = await response.clone().text();
+          console.error('CreateCar Raw Error Text:', errorText);
+          
+          // Handle specific database constraint errors
+          if (errorText.includes('VIN') || errorText.includes('vin')) {
+            errorMessage = 'Šis VIN kods jau tiek izmantots citai mašīnai';
+          } else if (errorText.includes('LicensePlate') || errorText.includes('license') || errorText.includes('numurzīme')) {
+            errorMessage = 'Šī numurzīme jau tiek izmantota citai mašīnai';
+          } else if (errorText.includes('duplicate') || errorText.includes('UNIQUE constraint')) {
+            errorMessage = 'Šie dati jau tiek izmantoti citai mašīnai';
+          } else if (response.status === 400) {
+            errorMessage = 'Nepareizi ievadīti dati';
+          } else if (response.status === 401) {
+            errorMessage = 'Nav autorizācijas';
+          } else if (response.status === 403) {
+            errorMessage = 'Nav atļaujas veikt šo darbību';
+          } else if (response.status >= 500) {
+            errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+          } else {
+            errorMessage = response.statusText || errorMessage;
+          }
+        } catch (textError) {
+          console.error('CreateCar Text Parse Failed:', textError);
+          // Last fallback
+          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Nezināma kļūda'}`;
+        }
+      }
+      
+      console.error('CreateCar Final Error Message:', errorMessage);
+      throw new Error(errorMessage);
     }
 
     return response.json();
   },
+
+  updateCar: async (carId: number, carData: CreateCarRequest): Promise<CreateCarResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars/${carId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(carData),
+    });
+
+    if (!response.ok) {
+      console.error('UpdateCar API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        url: response.url
+      });
+      
+      let errorMessage = 'Neizdevās atjaunināt mašīnu';
+      
+      try {
+        // Try to parse JSON response first
+        const error = await response.json();
+        console.error('UpdateCar JSON Error:', error);
+        if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch (jsonError) {
+        console.error('UpdateCar JSON Parse Failed:', jsonError);
+        // If JSON parsing fails, try to get raw text
+        try {
+          const errorText = await response.clone().text();
+          console.error('UpdateCar Raw Error Text:', errorText);
+          
+          // Handle specific database constraint errors
+          if (errorText.includes('VIN') || errorText.includes('vin')) {
+            errorMessage = 'Šis VIN kods jau tiek izmantots citai mašīnai';
+          } else if (errorText.includes('LicensePlate') || errorText.includes('license') || errorText.includes('numurzīme')) {
+            errorMessage = 'Šī numurzīme jau tiek izmantota citai mašīnai';
+          } else if (errorText.includes('duplicate') || errorText.includes('UNIQUE constraint')) {
+            errorMessage = 'Šie dati jau tiek izmantoti citai mašīnai';
+          } else if (response.status === 400) {
+            errorMessage = 'Nepareizi ievadīti dati';
+          } else if (response.status === 401) {
+            errorMessage = 'Nav autorizācijas';
+          } else if (response.status === 403) {
+            errorMessage = 'Nav atļaujas veikt šo darbību';
+          } else if (response.status >= 500) {
+            errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+          } else {
+            errorMessage = response.statusText || errorMessage;
+          }
+        } catch (textError) {
+          console.error('UpdateCar Text Parse Failed:', textError);
+          // Last fallback
+          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Nezināma kļūda'}`;
+        }
+      }
+      
+      console.error('UpdateCar Final Error Message:', errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  },
+
+  transferOwnership: async (carId: number, newOwnerEmail: string): Promise<TransferOwnershipResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars/${carId}/transfer-ownership`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ carId, newOwnerEmail }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Neizdevās nodot īpašumtiesības';
+      
+      try {
+        const error = await response.json();
+        if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch (jsonError) {
+        if (response.status === 400) {
+          errorMessage = 'Nepareizi ievadīti dati';
+        } else if (response.status === 401) {
+          errorMessage = 'Nav autorizācijas';
+        } else if (response.status === 403) {
+          errorMessage = 'Nav atļaujas nodot īpašumtiesības';
+        } else if (response.status === 404) {
+          errorMessage = 'Lietotājs ar šādu e-pasta adresi neeksistē';
+        } else if (response.status >= 500) {
+          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+        } else {
+          errorMessage = response.statusText || errorMessage;
+        }
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  },
+
+  changeUserRole: async (carId: number, userId: number, newRole: string): Promise<RoleChangeResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars/${carId}/change-role`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ carId, userId, newRole }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Neizdevās mainīt lietotāja lomu';
+      
+      try {
+        const error = await response.json();
+        if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch (jsonError) {
+        if (response.status === 400) {
+          errorMessage = 'Nepareizi ievadīti dati';
+        } else if (response.status === 403) {
+          errorMessage = 'Nav atļaujas mainīt šo lomu';
+        } else if (response.status === 404) {
+          errorMessage = 'Lietotājs nav atrasts';
+        } else if (response.status >= 500) {
+          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+        }
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  },
+
+  assignViewer: async (carId: number, email: string): Promise<RoleChangeResponse> => {
+    const token = tokenManager.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars/${carId}/assign-viewer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ carId, email }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Neizdevās piešķirt apskatītāja lomu';
+      
+      try {
+        const error = await response.json();
+        if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch (jsonError) {
+        if (response.status === 400) {
+          errorMessage = 'Nepareizi ievadīti dati';
+        } else if (response.status === 404) {
+          errorMessage = 'Lietotājs ar šādu e-pasta adresi neeksistē';
+        } else if (response.status >= 500) {
+          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+        }
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  },
+
+  removeUserAccess: async (carId: number, userId: number): Promise<RoleChangeResponse> => {
+    try {
+      const token = tokenManager.getToken();
+
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/cars/${carId}/remove-access`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ carId, userId }),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Neizdevās noņemt lietotāja piekļuvi';
+        
+        try {
+          const error = await response.json();
+          if (error.message) {
+            errorMessage = error.message;
+          }
+        } catch (jsonError) {
+          if (response.status === 400) {
+            errorMessage = 'Nepareizi ievadīti dati';
+          } else if (response.status === 403) {
+            errorMessage = 'Nav atļaujas noņemt šo piekļuvi';
+          } else if (response.status === 404) {
+            errorMessage = 'Lietotājs nav atrasts';
+          } else if (response.status >= 500) {
+            errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Remove user access error:', error);
+      throw new Error(error instanceof Error ? error.message : 'Neizdevās noņemt lietotāja piekļuvi');
+    }
+  }
 };
+
+// Delete car (MASTER_OWNER only)
+export const deleteCar = async (carId: number): Promise<boolean> => {
+  try {
+    const token = tokenManager.getToken();
+    if (!token) {
+      throw new Error('Nav autorizācijas tokena');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cars/${carId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Neizdevās dzēst automašīnu';
+      
+      try {
+        const error = await response.json();
+        if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch (e) {
+        // If parsing fails, use the default message
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Delete car error:', error);
+    throw new Error(error instanceof Error ? error.message : 'Neizdevās dzēst automašīnu');
+  }
+};
+
+export interface TransferOwnershipResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface RoleChangeResponse {
+  success: boolean;
+  message: string;
+}
 
 // Car Invites
 export interface CreateInviteRequest {
   carId: number;
   invitedUserEmail: string;
-  roleCode: 'OWNER' | 'DRIVER';
+  roleCode: 'OWNER' | 'VIEWER';
 }
 
 export interface InviteResponse {
@@ -315,8 +696,42 @@ export const inviteApi = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create invite');
+      let errorMessage = 'Neizdevās izveidot uzaicinājumu';
+      
+      try {
+        // Try to parse JSON response first
+        const error = await response.json();
+        if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch (jsonError) {
+        // If JSON parsing fails, try to get raw text
+        try {
+          const errorText = await response.clone().text();
+          
+          // Handle specific error cases
+          if (errorText.includes('not found') || errorText.includes('neeksistē')) {
+            errorMessage = 'Lietotājs ar šādu e-pastu neeksistē';
+          } else if (errorText.includes('already exists') || errorText.includes('jau eksistē')) {
+            errorMessage = 'Uzaicinājums šim lietotājam jau eksistē';
+          } else if (response.status === 400) {
+            errorMessage = 'Nepareizi ievadīti dati';
+          } else if (response.status === 401) {
+            errorMessage = 'Nav autorizācijas';
+          } else if (response.status === 403) {
+            errorMessage = 'Nav atļaujas nosūtīt uzaicinājumus';
+          } else if (response.status >= 500) {
+            errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+          } else {
+            errorMessage = response.statusText || errorMessage;
+          }
+        } catch {
+          // Last fallback
+          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Nezināma kļūda'}`;
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -338,7 +753,7 @@ export const inviteApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch received invites');
+      throw new Error('Neizdevās ielādēt saņemtos uzaicinājumus');
     }
 
     return response.json();
@@ -360,7 +775,7 @@ export const inviteApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch sent invites');
+      throw new Error('Neizdevās ielādēt nosūtītos uzaicinājumus');
     }
 
     return response.json();
@@ -383,7 +798,7 @@ export const inviteApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to accept invite');
+      throw new Error(error.message || 'Neizdevās pieņemt uzaicinājumu');
     }
 
     return response.json();
@@ -406,7 +821,7 @@ export const inviteApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to decline invite');
+      throw new Error(error.message || 'Neizdevās noraidīt uzaicinājumu');
     }
 
     return response.json();
@@ -429,7 +844,7 @@ export const inviteApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to cancel invite');
+      throw new Error(error.message || 'Neizdevās atcelt uzaicinājumu');
     }
 
     return response.json();
