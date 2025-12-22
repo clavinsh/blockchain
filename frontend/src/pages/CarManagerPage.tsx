@@ -6,7 +6,7 @@ import { inviteApi, carApi, deleteCar, type InviteResponse, type CarUser, type C
 export default function CarManagerPage() {
   const { userCars, selectedCarId, setSelectedCarId, setUserCars } = useCarContext()
   const [newInviteEmail, setNewInviteEmail] = useState('')
-  const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'VIEWER'>('OWNER')
+  const [newInviteRole, setNewInviteRole] = useState<'OWNER' | 'DRIVER' | 'VIEWER'>('DRIVER')
   const [sentInvites, setSentInvites] = useState<InviteResponse[]>([])
   const [carUsers, setCarUsers] = useState<CarUser[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -33,11 +33,10 @@ export default function CarManagerPage() {
 
   const selectedCar = userCars.find(car => car.carId === selectedCarId)
 
-  // Check if current user is an OWNER or MASTER_OWNER of the selected car
+  // Check if current user is an OWNER of the selected car
   const isOwner = selectedCar?.roleCode === 'OWNER'
-  const isMasterOwner = selectedCar?.roleCode === 'MASTER_OWNER'
-  const canInviteUsers = isOwner || isMasterOwner
-  const canTransferOwnership = isMasterOwner
+  const canInviteUsers = isOwner
+  const canTransferOwnership = isOwner
 
   const loadSentInvites = async () => {
     if (!selectedCarId) return
@@ -261,9 +260,9 @@ export default function CarManagerPage() {
         if (userCarsResponse.success && userCarsResponse.cars) {
           setUserCars(userCarsResponse.cars)
           
-          // Clear selected car if user is no longer MASTER_OWNER
+          // Clear selected car if user is no longer OWNER
           const updatedCar = userCarsResponse.cars.find(car => car.carId === selectedCarId)
-          if (!updatedCar || updatedCar.roleCode !== 'MASTER_OWNER') {
+          if (!updatedCar || updatedCar.roleCode !== 'OWNER') {
             setSelectedCarId(null)
           }
         }
@@ -375,19 +374,19 @@ export default function CarManagerPage() {
 
   const getRoleDisplayName = (role: string): string => {
     switch (role) {
-      case 'MASTER_OWNER': return 'Galvenais īpašnieks'
       case 'OWNER': return 'Īpašnieks'
+      case 'DRIVER': return 'Vadītājs'
       case 'VIEWER': return 'Apskatītājs'
       default: return role
     }
   }
 
   const getRoleOptions = (currentRole: string): string[] => {
-    // MASTER_OWNER cannot be changed
-    if (currentRole === 'MASTER_OWNER') return []
+    // OWNER cannot be changed (use ownership transfer instead)
+    if (currentRole === 'OWNER') return []
     
-    // Available role options for others (OWNER or VIEWER only)
-    return ['OWNER', 'VIEWER']
+    // Available role options for others (only DRIVER and VIEWER)
+    return ['DRIVER', 'VIEWER']
   }
 
   return (
@@ -644,7 +643,7 @@ export default function CarManagerPage() {
                         Pievienots: {car.assignedAt ? new Date(car.assignedAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
                       </span>
                       <div className="flex space-x-2">
-                        {(car.roleCode === 'MASTER_OWNER' || car.roleCode === 'OWNER') && (
+                        {car.roleCode === 'OWNER' && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -656,7 +655,7 @@ export default function CarManagerPage() {
                             Rediģēt
                           </Button>
                         )}
-                        {car.roleCode === 'MASTER_OWNER' && (
+                        {car.roleCode === 'OWNER' && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -705,10 +704,10 @@ export default function CarManagerPage() {
                       />
                       <select
                         value={newInviteRole}
-                        onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'VIEWER')}
+                        onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'DRIVER' | 'VIEWER')}
                         className="border border-blue-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="OWNER">Īpašnieks</option>
+                        <option value="DRIVER">Vadītājs</option>
                         <option value="VIEWER">Apskatītājs</option>
                       </select>
                       <Button
@@ -720,8 +719,9 @@ export default function CarManagerPage() {
                       </Button>
                     </div>
                     <div className="mt-2 text-xs text-gray-500 space-y-1">
-                      <p><strong>Īpašnieks:</strong> Var pārvaldīt mašīnas informāciju, uzaicināt citus lietotājus un mainīt to lomas</p>
-                      <p><strong>Apskatītājs:</strong> Var tikai skatīt mašīnas informāciju (vēlāk var tikt paaugstināts par īpašnieku)</p>
+                      <p><strong>Vadītājs:</strong> Var izmantot mašīnu un skatīt braukšanas datus</p>
+                      <p><strong>Apskatītājs:</strong> Var tikai skatīt mašīnas informāciju (bez braukšanas datiem)</p>
+                      <p className="text-yellow-700"><strong>Piezīme:</strong> Īpašnieka lomu var piešķirt tikai caur īpašumtiesību nodošanu</p>
                     </div>
                   </div>
                 </div>
@@ -747,8 +747,8 @@ export default function CarManagerPage() {
                                 {user.username} ({user.email})
                               </span>
                               <span className={`px-2 py-1 text-xs rounded-full ${
-                                user.roleCode === 'MASTER_OWNER' ? 'bg-red-100 text-red-800' :
                                 user.roleCode === 'OWNER' ? 'bg-purple-100 text-purple-800' : 
+                                user.roleCode === 'DRIVER' ? 'bg-blue-100 text-blue-800' :
                                 user.roleCode === 'VIEWER' ? 'bg-green-100 text-green-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
@@ -760,8 +760,8 @@ export default function CarManagerPage() {
                               Pievienots: {user.assignedAt ? new Date(user.assignedAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
                             </div>
                             
-                            {/* Role Management - Only show for OWNER/MASTER_OWNER if not MASTER_OWNER */}
-                            {canInviteUsers && user.roleCode !== 'MASTER_OWNER' && (
+                            {/* Role Management - Only show if not OWNER (OWNER requires ownership transfer) */}
+                            {canInviteUsers && user.roleCode !== 'OWNER' && (
                               <div className="flex items-center space-x-2 mt-2">
                                 <span className="text-xs text-gray-500">Mainīt lomu:</span>
                                 <select
@@ -805,8 +805,8 @@ export default function CarManagerPage() {
                             )}
                           </div>
                           
-                          {/* Remove User - Only for non-MASTER_OWNER */}
-                          {canInviteUsers && user.roleCode !== 'MASTER_OWNER' && (
+                          {/* Remove User - Only for non-OWNER */}
+                          {canInviteUsers && user.roleCode !== 'OWNER' && (
                             <Button
                               onClick={() => handleRemoveUserAccess(user.userId)}
                               variant="outline"
@@ -854,6 +854,7 @@ export default function CarManagerPage() {
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
                               Loma: {invite.roleCode === 'OWNER' ? 'Īpašnieks' : 
+                                     invite.roleCode === 'DRIVER' ? 'Vadītājs' :
                                      invite.roleCode === 'VIEWER' ? 'Apskatītājs' : invite.roleCode} •
                               Nosūtīts: {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
                             </div>
@@ -874,14 +875,14 @@ export default function CarManagerPage() {
                 </div>
               </div>
 
-              {/* Ownership Transfer - Only for MASTER_OWNER */}
+              {/* Ownership Transfer - Only for OWNER */}
               {canTransferOwnership && (
                 <div className="mb-6">
                   <h3 className="text-md font-semibold text-gray-900 mb-3">Nodot īpašumtiesības</h3>
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div className="mb-4">
                       <p className="text-sm text-yellow-800 mb-2">
-                        <strong>Brīdinājums:</strong> Nododot īpašumtiesības, jūs zaudēsiet GALVENO ĪPAŠNIEKA statusu un kļūsiet par parasto īpašnieku. 
+                        <strong>Brīdinājums:</strong> Nododot īpašumtiesības, jūs zaudēsiet Īpašnieka statusu. 
                         Šī darbība ir neatgriezeniska.
                       </p>
                     </div>

@@ -69,8 +69,8 @@ public class CarInvitesController : ControllerBase
             return Forbid();
         }
 
-        // Only OWNER and MASTER_OWNER roles can send invites
-        if (userCarRelation.RoleCode != "OWNER" && userCarRelation.RoleCode != "MASTER_OWNER")
+// Only OWNER role can send invites
+    if (userCarRelation.RoleCode != "OWNER")
         {
             return StatusCode(403, new InviteActionResponse
             {
@@ -130,13 +130,13 @@ public class CarInvitesController : ControllerBase
             });
         }
 
-        // Validate role code
-        if (request.RoleCode != "OWNER" && request.RoleCode != "VIEWER")
+        // Validate role code (can invite as DRIVER or VIEWER, OWNER requires ownership transfer)
+        if (request.RoleCode != "OWNER" && request.RoleCode != "DRIVER" && request.RoleCode != "VIEWER")
         {
             return BadRequest(new InviteActionResponse
             {
                 Success = false,
-                Message = "Nepareiza lomas kods. Jābūt OWNER vai VIEWER"
+                Message = "Nepareiza lomas kods. Jābūt OWNER, DRIVER vai VIEWER"
             });
         }
 

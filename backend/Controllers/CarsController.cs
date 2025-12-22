@@ -410,9 +410,9 @@ public class CarsController : ControllerBase
                 });
             }
 
-            // Check if current user is MASTER_OWNER
-            var isMasterOwner = await _carService.IsMasterOwnerAsync(userId, carId);
-            if (!isMasterOwner)
+// Check if current user is OWNER
+        var isOwner = await _carService.IsOwnerAsync(userId, carId);
+        if (!isOwner)
             {
                 return Forbid();
             }
@@ -634,13 +634,13 @@ public class CarsController : ControllerBase
                 return Unauthorized(new { success = false, message = "Nederīgs autentifikācijas tokens" });
             }
 
-            // Check if user is MASTER_OWNER of this car
-            var userCarRelation = await _context.Users2Cars
-                .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.CarId == carId);
+// Check if user is OWNER of this car
+        var userCarRelation = await _context.Users2Cars
+            .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.CarId == carId);
 
-            if (userCarRelation == null || userCarRelation.RoleCode != "MASTER_OWNER")
-            {
-                return StatusCode(403, new { success = false, message = "Tikai galvenais īpašnieks var dzēst mašīnu" });
+        if (userCarRelation == null || userCarRelation.RoleCode != "OWNER")
+        {
+            return StatusCode(403, new { success = false, message = "Tikai īpašnieks var dzēst mašīnu" });
             }
 
             // Delete all related data

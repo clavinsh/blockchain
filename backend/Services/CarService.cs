@@ -109,7 +109,7 @@ public class CarService
             {
                 UserId = userId,
                 CarId = car.CarId,
-                RoleCode = "MASTER_OWNER",
+                RoleCode = "OWNER",
                 AssignedAt = DateTime.UtcNow
             };
 
@@ -206,13 +206,13 @@ public class CarService
     {
         try
         {
-            // Check if current user is MASTER_OWNER of the car
-            var currentOwnerRelation = await _context.Users2Cars
-                .FirstOrDefaultAsync(uc => uc.CarId == carId && uc.UserId == currentMasterOwnerId && uc.RoleCode == "MASTER_OWNER");
+// Check if current user is OWNER of the car
+        var currentOwnerRelation = await _context.Users2Cars
+            .FirstOrDefaultAsync(uc => uc.CarId == carId && uc.UserId == currentMasterOwnerId && uc.RoleCode == "OWNER");
 
-            if (currentOwnerRelation == null)
-            {
-                _logger.LogWarning("User {UserId} is not MASTER_OWNER of car {CarId}", currentMasterOwnerId, carId);
+        if (currentOwnerRelation == null)
+        {
+            _logger.LogWarning("User {UserId} is not OWNER of car {CarId}", currentMasterOwnerId, carId);
                 return false;
             }
 
@@ -230,32 +230,31 @@ public class CarService
 
             if (existingRelation != null)
             {
-                // Update existing relation to MASTER_OWNER
-                existingRelation.RoleCode = "MASTER_OWNER";
+                // Update existing relation to OWNER
+                existingRelation.RoleCode = "OWNER";
                 existingRelation.AssignedAt = DateTime.UtcNow;
             }
             else
             {
-                // Create new MASTER_OWNER relation for new owner
+                // Create new OWNER relation for new owner
                 var newOwnerRelation = new Users2Car
                 {
                     UserId = newMasterOwnerId,
                     CarId = carId,
-                    RoleCode = "MASTER_OWNER",
+                    RoleCode = "OWNER",
                     AssignedAt = DateTime.UtcNow
                 };
                 _context.Users2Cars.Add(newOwnerRelation);
             }
 
-            // Update current MASTER_OWNER to OWNER
-            currentOwnerRelation.RoleCode = "OWNER";
-            currentOwnerRelation.AssignedAt = DateTime.UtcNow;
+        // Remove the old owner's access completely
+        _context.Users2Cars.Remove(currentOwnerRelation);
 
-            await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Transferred ownership of car {CarId} from user {OldOwnerId} to user {NewOwnerId}", 
-                carId, currentMasterOwnerId, newMasterOwnerId);
-            return true;
+        _logger.LogInformation("Transferred ownership of car {CarId} from user {OldOwnerId} to user {NewOwnerId}", 
+            carId, currentMasterOwnerId, newMasterOwnerId);
+        return true;
         }
         catch (Exception ex)
         {
@@ -264,10 +263,10 @@ public class CarService
         }
     }
 
-    public async Task<bool> IsMasterOwnerAsync(int userId, int carId)
+    public async Task<bool> IsOwnerAsync(int userId, int carId)
     {
         return await _context.Users2Cars
-            .AnyAsync(uc => uc.UserId == userId && uc.CarId == carId && uc.RoleCode == "MASTER_OWNER");
+            .AnyAsync(uc => uc.UserId == userId && uc.CarId == carId && uc.RoleCode == "OWNER");
     }
 
     public async Task<UserTable?> GetUserByEmailAsync(string email)
@@ -281,44 +280,37 @@ public class CarService
         try
         {
             // Validate new role
-            var validRoles = new[] { "OWNER", "VIEWER" };
+            var validRoles = new[] { "OWNER", "DRIVER", "VIEWER" };
             if (!validRoles.Contains(newRole))
             {
                 _logger.LogWarning("Invalid role: {Role}", newRole);
                 return false;
             }
 
-            // Check if requester has permission (must be MASTER_OWNER or OWNER)
-            var requesterRelation = await _context.Users2Cars
-                .FirstOrDefaultAsync(uc => uc.CarId == carId && uc.UserId == requesterId);
+// Check if requester has permission (must be OWNER)
+        var requesterRelation = await _context.Users2Cars
+            .FirstOrDefaultAsync(uc => uc.CarId == carId && uc.UserId == requesterId);
 
-            if (requesterRelation == null || (requesterRelation.RoleCode != "MASTER_OWNER" && requesterRelation.RoleCode != "OWNER"))
-            {
-                _logger.LogWarning("User {RequesterId} does not have permission to change roles for car {CarId}", requesterId, carId);
-                return false;
-            }
+        if (requesterRelation == null || requesterRelation.RoleCode != "OWNER")
+        {
+            _logger.LogWarning("User {RequesterId} does not have permission to change roles for car {CarId}", requesterId, carId);
+            return false;
+        }
 
-            // Find target user's relation to the car
-            var targetRelation = await _context.Users2Cars
-                .FirstOrDefaultAsync(uc => uc.CarId == carId && uc.UserId == targetUserId);
+        // Find target user's relation to the car
+        var targetRelation = await _context.Users2Cars
+            .FirstOrDefaultAsync(uc => uc.CarId == carId && uc.UserId == targetUserId);
 
-            if (targetRelation == null)
-            {
-                _logger.LogWarning("Target user {UserId} does not have access to car {CarId}", targetUserId, carId);
-                return false;
-            }
+        if (targetRelation == null)
+        {
+            _logger.LogWarning("Target user {UserId} does not have access to car {CarId}", targetUserId, carId);
+            return false;
+        }
 
-            // Prevent changing MASTER_OWNER role (can only be changed through ownership transfer)
-            if (targetRelation.RoleCode == "MASTER_OWNER")
-            {
-                _logger.LogWarning("Cannot change MASTER_OWNER role directly");
-                return false;
-            }
-
-            // Prevent non-MASTER_OWNER from promoting to OWNER
-            if (newRole == "OWNER" && requesterRelation.RoleCode != "MASTER_OWNER")
-            {
-                _logger.LogWarning("Only MASTER_OWNER can promote users to OWNER role");
+        // Prevent changing another OWNER role (ownership transfer required)
+        if (targetRelation.RoleCode == "OWNER")
+        {
+            _logger.LogWarning("Cannot change OWNER role directly, use ownership transfer");
                 return false;
             }
 
@@ -353,7 +345,7 @@ public class CarService
             var requesterRelation = await _context.Users2Cars
                 .FirstOrDefaultAsync(uc => uc.CarId == carId && uc.UserId == requesterId);
 
-            if (requesterRelation == null || (requesterRelation.RoleCode != "MASTER_OWNER" && requesterRelation.RoleCode != "OWNER"))
+if (requesterRelation == null || requesterRelation.RoleCode != "OWNER")
             {
                 _logger.LogWarning("User {RequesterId} does not have permission to assign viewers for car {CarId}", requesterId, carId);
                 return false;
@@ -410,7 +402,7 @@ public class CarService
             var requesterRelation = await _context.Users2Cars
                 .FirstOrDefaultAsync(uc => uc.CarId == carId && uc.UserId == requesterId);
 
-            if (requesterRelation == null || (requesterRelation.RoleCode != "MASTER_OWNER" && requesterRelation.RoleCode != "OWNER"))
+            if (requesterRelation == null || requesterRelation.RoleCode != "OWNER")
             {
                 _logger.LogWarning("User {RequesterId} does not have permission to remove access for car {CarId}", requesterId, carId);
                 return false;
@@ -426,29 +418,18 @@ public class CarService
                 return false;
             }
 
-            // Prevent removing MASTER_OWNER
-            if (targetRelation.RoleCode == "MASTER_OWNER")
+            // Prevent removing OWNER (use ownership transfer instead)
+            if (targetRelation.RoleCode == "OWNER")
             {
-                _logger.LogWarning("Cannot remove MASTER_OWNER access");
+                _logger.LogWarning("Cannot remove OWNER access, use ownership transfer");
                 return false;
             }
 
-            // Allow users to remove their own access if they're not MASTER_OWNER
-            // But prevent OWNER from removing themselves if they're the last OWNER
-            if (requesterId == targetUserId && targetRelation.RoleCode == "OWNER")
+            // Prevent users from removing their own access
+            if (requesterId == targetUserId)
             {
-                // Check if there are other OWNERs or MASTER_OWNERs
-                var otherManagers = await _context.Users2Cars
-                    .Where(uc => uc.CarId == carId && 
-                                uc.UserId != targetUserId && 
-                                (uc.RoleCode == "OWNER" || uc.RoleCode == "MASTER_OWNER"))
-                    .CountAsync();
-
-                if (otherManagers == 0)
-                {
-                    _logger.LogWarning("Cannot remove last manager from car {CarId}", carId);
-                    return false;
-                }
+                _logger.LogWarning("Cannot remove your own access");
+                return false;
             }
 
             // Remove the relation
@@ -470,6 +451,6 @@ public class CarService
         var relation = await _context.Users2Cars
             .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.CarId == carId);
         
-        return relation != null && (relation.RoleCode == "MASTER_OWNER" || relation.RoleCode == "OWNER");
+        return relation != null && relation.RoleCode == "OWNER";
     }
 }

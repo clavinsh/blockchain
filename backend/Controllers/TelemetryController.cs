@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 using backend.Models;
 using backend.Services;
+using backend.Services.Fabric;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -15,15 +16,18 @@ namespace backend.Controllers;
 public class TelemetryController : ControllerBase
 {
     private readonly TelemetryDataService _telemetryService;
+    private readonly Services.Fabric.TelemetryService _fabricTelemetryService;
     private readonly BlockchainDbContext _context;
     private readonly ILogger<TelemetryController> _logger;
 
     public TelemetryController(
         TelemetryDataService telemetryService,
+        Services.Fabric.TelemetryService fabricTelemetryService,
         BlockchainDbContext context,
         ILogger<TelemetryController> logger)
     {
         _telemetryService = telemetryService;
+        _fabricTelemetryService = fabricTelemetryService;
         _context = context;
         _logger = logger;
     }
@@ -210,6 +214,103 @@ public class TelemetryController : ControllerBase
         {
             _logger.LogError(ex, "Error fetching route data for car {CarId}", carId);
             return StatusCode(500, new { message = "An error occurred while fetching the route data" });
+        }
+    }
+
+    /// <summary>
+    /// Get blockchain telemetry data for a specific vehicle
+    /// </summary>
+    [HttpGet("blockchain/{carId}")]
+    public async Task<ActionResult<List<VehicleTelemetry>>> GetBlockchainTelemetry(string carId)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "Invalid authentication token" });
+            }
+
+            // Convert string carId to int for database check
+            if (!int.TryParse(carId, out int carIdInt))
+            {
+                return BadRequest(new { message = "Invalid car ID format" });
+            }
+
+            var (hasAccess, roleCode) = await CheckCarAccessAsync(userId.Value, carIdInt);
+
+            if (!hasAccess)
+            {
+                return Forbid();
+            }
+
+            _logger.LogInformation("Fetching blockchain telemetry for car {CarId}", carId);
+
+            var telemetryData = await _fabricTelemetryService.GetTelemetryByVehicleAsync(carId);
+
+            _logger.LogInformation("Retrieved {Count} blockchain telemetry records for car {CarId}", telemetryData.Count, carId);
+
+            return Ok(telemetryData);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Blockchain gateway connection error for car {CarId}. Is the Go gateway running on port 3001?", carId);
+            return StatusCode(503, new { message = "Cannot connect to blockchain gateway. Please ensure the blockchain service is running." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching blockchain telemetry for car {CarId}", carId);
+            return StatusCode(500, new { message = $"An error occurred while fetching blockchain telemetry: {ex.Message}" });
+        }
+    }
+
+    /// <summary>
+    /// Get blockchain telemetry data for a specific vehicle within a time range
+    /// </summary>
+    [HttpGet("blockchain/{carId}/range")]
+    public async Task<ActionResult<List<VehicleTelemetry>>> GetBlockchainTelemetryByTimeRange(
+        string carId,
+        [FromQuery] DateTime? startTime,
+        [FromQuery] DateTime? endTime)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "Invalid authentication token" });
+            }
+
+            // Convert string carId to int for database check
+            if (!int.TryParse(carId, out int carIdInt))
+            {
+                return BadRequest(new { message = "Invalid car ID format" });
+            }
+
+            var (hasAccess, roleCode) = await CheckCarAccessAsync(userId.Value, carIdInt);
+
+            if (!hasAccess)
+            {
+                return Forbid();
+            }
+
+            _logger.LogInformation(
+                "Fetching blockchain telemetry for car {CarId} from {StartTime} to {EndTime}",
+                carId,
+                startTime,
+                endTime);
+
+            var telemetryData = await _fabricTelemetryService.GetTelemetryByVehicleAndTimeRangeAsync(
+                carId,
+                startTime,
+                endTime);
+
+            return Ok(telemetryData);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching blockchain telemetry for car {CarId}", carId);
+            return StatusCode(500, new { message = "An error occurred while fetching blockchain telemetry" });
         }
     }
 }
