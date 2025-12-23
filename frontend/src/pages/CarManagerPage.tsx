@@ -853,9 +853,7 @@ export default function CarManagerPage() {
                               </span>
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
-                              Loma: {invite.roleCode === 'OWNER' ? 'Īpašnieks' : 
-                                     invite.roleCode === 'DRIVER' ? 'Vadītājs' :
-                                     invite.roleCode === 'VIEWER' ? 'Apskatītājs' : invite.roleCode} •
+                              Loma: {getRoleDisplayName(invite.roleCode)} •
                               Nosūtīts: {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
                             </div>
                           </div>

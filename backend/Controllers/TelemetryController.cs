@@ -218,7 +218,7 @@ public class TelemetryController : ControllerBase
     }
 
     /// <summary>
-    /// Get blockchain telemetry data for a specific vehicle
+    /// Get blockchain telemetry data for a specific vehicle (from MySQL cache)
     /// </summary>
     [HttpGet("blockchain/{carId}")]
     public async Task<ActionResult<List<VehicleTelemetry>>> GetBlockchainTelemetry(string carId)
@@ -244,23 +244,29 @@ public class TelemetryController : ControllerBase
                 return Forbid();
             }
 
-            _logger.LogInformation("Fetching blockchain telemetry for car {CarId}", carId);
+            _logger.LogInformation("Fetching telemetry cache data for car {CarId}", carId);
 
-            var telemetryData = await _fabricTelemetryService.GetTelemetryByVehicleAsync(carId);
+            // Fetch from CarDataCache table (MySQL) instead of blockchain
+            var cacheEntries = await _context.CarDataCaches
+                .Where(c => c.CarId == carIdInt && c.DeleteTime == null)
+                .OrderBy(c => c.InsertTime)
+                .ToListAsync();
 
-            _logger.LogInformation("Retrieved {Count} blockchain telemetry records for car {CarId}", telemetryData.Count, carId);
+            var telemetryList = cacheEntries.Select(entry => new VehicleTelemetry
+            {
+                CarId = entry.CarId.ToString(),
+                CarData = entry.CarData,
+                InsertTime = entry.InsertTime ?? DateTime.UtcNow
+            }).ToList();
 
-            return Ok(telemetryData);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "Blockchain gateway connection error for car {CarId}. Is the Go gateway running on port 3001?", carId);
-            return StatusCode(503, new { message = "Cannot connect to blockchain gateway. Please ensure the blockchain service is running." });
+            _logger.LogInformation("Retrieved {Count} telemetry cache records for car {CarId}", telemetryList.Count, carId);
+
+            return Ok(telemetryList);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching blockchain telemetry for car {CarId}", carId);
-            return StatusCode(500, new { message = $"An error occurred while fetching blockchain telemetry: {ex.Message}" });
+            _logger.LogError(ex, "Error fetching telemetry cache for car {CarId}", carId);
+            return StatusCode(500, new { message = $"An error occurred while fetching telemetry data: {ex.Message}" });
         }
     }
 

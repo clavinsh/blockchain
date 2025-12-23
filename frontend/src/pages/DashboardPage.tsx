@@ -6,6 +6,8 @@ export default function DashboardPage() {
   const { selectedCarId, selectedCar } = useCarContext()
   const [carDataList, setCarDataList] = useState<CarDataItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const fetchCarData = async (carId: number) => {
     try {
@@ -25,8 +27,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (selectedCarId) {
       fetchCarData(selectedCarId)
+      setCurrentPage(1)
     } else {
       setCarDataList([])
+      setCurrentPage(1)
     }
   }, [selectedCarId])
 
@@ -76,14 +80,51 @@ export default function DashboardPage() {
               </div>
             ) : parsedLatestData ? (
               <div className="space-y-3">
-                {Object.entries(parsedLatestData).slice(0, 5).map(([key, value]) => (
-                  <div key={key} className="flex justify-between">
-                    <span className="text-gray-600 capitalize">{key}:</span>
-                    <span className="font-medium">{String(value)}</span>
-                  </div>
-                ))}
+                {Object.entries(parsedLatestData)
+                  .filter(([key]) => key !== 'SensorDataId')
+                  .slice(0, 5)
+                  .map(([key, value]) => {
+                    const fieldNames: Record<string, string> = {
+                      VehicleId: 'Mašīnas ID',
+                      Timestamp: 'Laiks',
+                      Latitude: 'Platums',
+                      Longitude: 'Garums',
+                      Altitude: 'Augstums',
+                      Speed: 'Ātrums',
+                      FuelLevel: 'Degvielas līmenis',
+                      EngineTemp: 'Dzinēja temperatūra',
+                      BrakeFluidLevel: 'Bremžu šķidruma līmenis',
+                      TirePressure: 'Riepu spiediens',
+                      BatteryVoltage: 'Akumulatora spriegums'
+                    }
+                    const latvianKey = fieldNames[key] || key
+                    
+                    let displayValue = String(value)
+                    if (key === 'Timestamp' && typeof value === 'string') {
+                      try {
+                        displayValue = new Date(value).toLocaleString('lv-LV', { 
+                          timeZone: 'Europe/Riga',
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })
+                      } catch (e) {
+                        displayValue = String(value)
+                      }
+                    }
+                    
+                    return (
+                      <div key={key} className="flex justify-between">
+                        <span className="text-gray-600">{latvianKey}:</span>
+                        <span className="font-medium">{displayValue}</span>
+                      </div>
+                    )
+                  })}
                 <div className="text-xs text-gray-500 mt-4">
-                  Pēdējā atjaunināšana: {latestData?.insertTime ? new Date(latestData.insertTime).toLocaleString('lv-LV') : 'Nav zināms'}
+                  Pēdējā atjaunināšana: {latestData?.insertTime ? new Date(latestData.insertTime).toLocaleString('lv-LV', { timeZone: 'Europe/Riga', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Nav zināms'}
                 </div>
               </div>
             ) : (
@@ -147,16 +188,26 @@ export default function DashboardPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {carDataList.length > 0 ? (
-                  carDataList.map((item) => (
-                    <tr key={item.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.insertTime ? new Date(item.insertTime).toLocaleString('lv-LV') : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <pre className="text-xs overflow-x-auto">{item.carData}</pre>
-                      </td>
-                    </tr>
-                  ))
+                  carDataList
+                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                    .map((item) => (
+                      <tr key={item.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {item.insertTime ? new Date(item.insertTime).toLocaleString('lv-LV', { 
+                            timeZone: 'Europe/Riga',
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          }) : '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          <pre className="text-xs overflow-x-auto">{item.carData}</pre>
+                        </td>
+                      </tr>
+                    ))
                 ) : (
                   <tr>
                     <td colSpan={2} className="px-6 py-8 text-center text-sm text-gray-500">
@@ -167,6 +218,33 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
+          {/* Pagination Controls */}
+          {carDataList.length > itemsPerPage && (
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Rāda {((currentPage - 1) * itemsPerPage) + 1} līdz {Math.min(currentPage * itemsPerPage, carDataList.length)} no {carDataList.length} ierakstiem
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Iepriekšējā
+                </button>
+                <span className="px-3 py-1 text-sm text-gray-700">
+                  Lapa {currentPage} no {Math.ceil(carDataList.length / itemsPerPage)}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(carDataList.length / itemsPerPage), p + 1))}
+                  disabled={currentPage >= Math.ceil(carDataList.length / itemsPerPage)}
+                  className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Nākamā →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

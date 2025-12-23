@@ -16,11 +16,15 @@ export default function AnalyzedDataPage() {
   const [resellerSummary, setResellerSummary] = useState<ResellerSummary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'blockchain' | 'driving' | 'insurance' | 'reseller'>('blockchain')
 
   // Get user role from selected car
   const userRole = selectedCar?.roleCode || ''
   const isViewer = userRole === 'VIEWER'
+  
+  // Set default tab based on role
+  const [activeTab, setActiveTab] = useState<'driving' | 'insurance' | 'reseller' | 'system'>(
+    isViewer ? 'insurance' : 'driving'
+  )
 
   const fetchBlockchainData = async (carId: number) => {
     try {
@@ -29,9 +33,15 @@ export default function AnalyzedDataPage() {
       
       console.log('Fetching telemetry data for car ID:', carId)
       
-      // Note: This uses database telemetry, not blockchain
-      // The blockchain stores vehicle registration metadata
-      setBlockchainData([])
+      // Load telemetry data from CarDataCache (MySQL)
+      // Note: This displays MySQL cache data, not live blockchain
+      try {
+        const telemetryData = await telemetryApi.getBlockchainTelemetry(carId)
+        setBlockchainData(telemetryData)
+      } catch (err) {
+        console.error('Failed to fetch telemetry cache data:', err)
+        setBlockchainData([])
+      }
 
       // Calculate date range for reports (last 30 days)
       const endDate = new Date()
@@ -93,15 +103,6 @@ export default function AnalyzedDataPage() {
     )
   }
 
-  const exportToJSON = (data: any, filename: string) => {
-    const jsonContent = JSON.stringify(data, null, 2)
-    const blob = new Blob([jsonContent], { type: 'application/json' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `${selectedCar.brand}_${selectedCar.model}_${filename}.json`
-    link.click()
-  }
-
   const getRiskLevelColor = (level: string) => {
     switch (level) {
       case 'VeryLow':
@@ -134,6 +135,40 @@ export default function AnalyzedDataPage() {
     }
   }
 
+  const translateWearLevel = (level: string) => {
+    const translations: Record<string, string> = {
+      'Low': 'Zems',
+      'Moderate': 'Vidējs',
+      'High': 'Augsts',
+      'Severe': 'Kritisks'
+    }
+    return translations[level] || level
+  }
+
+  const translateRiskLevel = (level: string) => {
+    const translations: Record<string, string> = {
+      'VeryLow': 'Ļoti zems',
+      'Low': 'Zems',
+      'Moderate': 'Vidējs',
+      'High': 'Augsts',
+      'VeryHigh': 'Ļoti augsts'
+    }
+    return translations[level] || level
+  }
+
+  const getRoleLabel = (roleCode: string) => {
+    switch (roleCode) {
+      case 'OWNER':
+        return 'Īpašnieks'
+      case 'DRIVER':
+        return 'Vadītājs'
+      case 'VIEWER':
+        return 'Skatītājs'
+      default:
+        return roleCode
+    }
+  }
+
   return (
     <div>
       <main className="p-6">
@@ -143,7 +178,7 @@ export default function AnalyzedDataPage() {
             Blockchain telemetrija: {selectedCar.brand} {selectedCar.model}
           </h2>
           <p className="text-gray-600">
-            Numurzīme: {selectedCar.licensePlate} | Loma: {userRole}
+            Numurzīme: {selectedCar.licensePlate} | Loma: {getRoleLabel(userRole)}
           </p>
         </div>
 
@@ -157,16 +192,6 @@ export default function AnalyzedDataPage() {
         {/* Tab Navigation */}
         <div className="mb-6 border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('blockchain')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'blockchain'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Blockchain dati ({blockchainData.length})
-            </button>
             {!isViewer && (
               <button
                 onClick={() => setActiveTab('driving')}
@@ -199,53 +224,25 @@ export default function AnalyzedDataPage() {
             >
               Pārdevēja atskaite
             </button>
+            <button
+              onClick={() => setActiveTab('system')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'system'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Sistēmas informācija ({blockchainData.length})
+            </button>
           </nav>
         </div>
 
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">Ielādē datus no blockchain...</p>
+            <p className="text-gray-600">Ielādē datus...</p>
           </div>
         ) : (
           <>
-            {/* Blockchain Data Tab */}
-            {activeTab === 'blockchain' && (
-              <div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">ℹ️ Blockchain arhitektūra</h3>
-                  <p className="text-sm text-blue-800">
-                    Šajā projektā blockchain tīkls (Hyperledger Fabric) glabā transportlīdzekļu reģistrācijas metadatus un piekļuves kontroli.
-                    Telemetrijas dati tiek glabāti MySQL datubāzē labākai veiktspējai un vaicājumu efektivitātei.
-                  </p>
-                  <p className="text-sm text-blue-800 mt-2">
-                    Blockchain stāvoklis: <span className="font-semibold text-green-700">✓ Aktīvs</span> (Kanāls: mychannel, Chaincode: vehicle)
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Pieejamās funkcijas</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-2">🚗 Transportlīdzekļu reģistrācija</h4>
-                      <p className="text-sm text-gray-600">Nemainīga reģistrācijas vēsture blockchain tīklā</p>
-                    </div>
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-2">🔐 Piekļuves kontrole</h4>
-                      <p className="text-sm text-gray-600">Decentralizēta piekļuves tiesību pārvaldība</p>
-                    </div>
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-2">📊 Telemetrijas analīze</h4>
-                      <p className="text-sm text-gray-600">Skatiet zemāk esošajās cilnēs (kad ir pieejami dati)</p>
-                    </div>
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-2">📝 Audita žurnāls</h4>
-                      <p className="text-sm text-gray-600">Pilnīga izmaiņu vēsture blockchain ledger'ī</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Driving Report Tab */}
             {activeTab === 'driving' && !isViewer && !drivingReport && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
@@ -286,7 +283,7 @@ export default function AnalyzedDataPage() {
                     <div>
                       <p className="text-sm text-gray-600">Riska līmenis</p>
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getRiskLevelColor(drivingReport.riskAssessment.overallRiskLevel)}`}>
-                        {drivingReport.riskAssessment.overallRiskLevel}
+                        {translateRiskLevel(drivingReport.riskAssessment.overallRiskLevel)}
                       </span>
                     </div>
                     <div>
@@ -305,19 +302,19 @@ export default function AnalyzedDataPage() {
                     <div>
                       <p className="text-sm text-gray-600">Bremzes</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(drivingReport.vehicleWearEstimate.brakeWearLevel)}`}>
-                        {drivingReport.vehicleWearEstimate.brakeWearLevel}
+                        {translateWearLevel(drivingReport.vehicleWearEstimate.brakeWearLevel)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Motors</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(drivingReport.vehicleWearEstimate.engineWearLevel)}`}>
-                        {drivingReport.vehicleWearEstimate.engineWearLevel}
+                        {translateWearLevel(drivingReport.vehicleWearEstimate.engineWearLevel)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Riepas</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(drivingReport.vehicleWearEstimate.tireWearLevel)}`}>
-                        {drivingReport.vehicleWearEstimate.tireWearLevel}
+                        {translateWearLevel(drivingReport.vehicleWearEstimate.tireWearLevel)}
                       </p>
                     </div>
                   </div>
@@ -371,7 +368,7 @@ export default function AnalyzedDataPage() {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Riska līmenis</span>
                       <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getRiskLevelColor(insuranceSummary.riskLevel)}`}>
-                        {insuranceSummary.riskLevel}
+                        {translateRiskLevel(insuranceSummary.riskLevel)}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -419,19 +416,19 @@ export default function AnalyzedDataPage() {
                     <div>
                       <p className="text-sm text-gray-600">Bremzes</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(resellerSummary.brakeCondition)}`}>
-                        {resellerSummary.brakeCondition}
+                        {translateWearLevel(resellerSummary.brakeCondition)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Motors</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(resellerSummary.engineCondition)}`}>
-                        {resellerSummary.engineCondition}
+                        {translateWearLevel(resellerSummary.engineCondition)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Riepas</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(resellerSummary.tireCondition)}`}>
-                        {resellerSummary.tireCondition}
+                        {translateWearLevel(resellerSummary.tireCondition)}
                       </p>
                     </div>
                   </div>
@@ -447,6 +444,120 @@ export default function AnalyzedDataPage() {
                     </ul>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* System Information Tab */}
+            {activeTab === 'system' && (
+              <div className="space-y-6">
+                {/* System Status */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">🔗 Sistēmas stāvoklis</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-600">Blockchain tīkls</span>
+                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          ✓ Aktīvs
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Hyperledger Fabric 2.5</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-600">Datu bāze</span>
+                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          ✓ Savienots
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">MySQL 8.0</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-600">Telemetrijas ieraksti</span>
+                        <span className="text-lg font-bold text-blue-600">{blockchainData.length}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Saglabāti kešatmiņā</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-600">API Gateway</span>
+                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          ✓ Gatavs
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Port 3001</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Blockchain Architecture */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">🏗️ Blockchain arhitektūra</h3>
+                  <div className="space-y-3 text-sm text-gray-700">
+                    <div className="flex items-start">
+                      <span className="font-semibold min-w-32">Kanāls:</span>
+                      <span>mychannel</span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="font-semibold min-w-32">Chaincode:</span>
+                      <span>vehicle (versija 1.0)</span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="font-semibold min-w-32">Konsensus:</span>
+                      <span>Raft (Orderer)</span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="font-semibold min-w-32">Valsts DB:</span>
+                      <span>CouchDB 3.3</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Available Functions */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ Pieejamās funkcijas</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-4">
+                      <h4 className="font-semibold text-gray-900 mb-1">🚗 Transportlīdzekļu reģistrācija</h4>
+                      <p className="text-xs text-gray-600">Nemainīga reģistrācijas vēsture blockchain ledger'ī</p>
+                    </div>
+                    <div className="border-l-4 border-green-500 bg-green-50 rounded-r-lg p-4">
+                      <h4 className="font-semibold text-gray-900 mb-1">🔐 Piekļuves kontrole</h4>
+                      <p className="text-xs text-gray-600">Decentralizēta lietotāju tiesību pārvaldība</p>
+                    </div>
+                    <div className="border-l-4 border-purple-500 bg-purple-50 rounded-r-lg p-4">
+                      <h4 className="font-semibold text-gray-900 mb-1">📊 Telemetrijas analīze</h4>
+                      <p className="text-xs text-gray-600">Braukšanas datu apstrāde un atskaišu ģenerēšana</p>
+                    </div>
+                    <div className="border-l-4 border-orange-500 bg-orange-50 rounded-r-lg p-4">
+                      <h4 className="font-semibold text-gray-900 mb-1">📝 Audita žurnāls</h4>
+                      <p className="text-xs text-gray-600">Pilnīga izmaiņu vēsture ar laika zīmogiem</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Data Storage Info */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">💾 Datu glabāšana</h3>
+                  <p className="text-sm text-gray-700 mb-3">
+                    Sistēma izmanto hibrīdu pieeju datu glabāšanai:
+                  </p>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li className="flex items-start">
+                      <span className="mr-2">🔗</span>
+                      <span><strong>Blockchain:</strong> Auto reģistrācijas metadati, īpašumtiesības, piekļuves tiesības</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">💿</span>
+                      <span><strong>MySQL:</strong> Telemetrijas dati kešatmiņā ātrākai piekļuvei un analīzei</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">⚡</span>
+                      <span><strong>Priekšrocības:</strong> Blockchain drošība + SQL vaicājumu ātrums</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
             )}
           </>

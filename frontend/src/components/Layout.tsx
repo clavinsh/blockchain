@@ -107,26 +107,28 @@ export default function Layout({ children }: LayoutProps) {
 
       <div className="flex">
         {/* Sidebar Navigation */}
-        <nav className="w-64 bg-white shadow-sm h-[calc(100vh-4rem)] overflow-y-auto">
-          <div className="p-6">
-            <ul className="space-y-2">
-              {navigationItems.map((item) => (
-                <li key={item.path}>
-                  <Link
-                    to={item.path}
-                    className={`flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === item.path
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                      }`}
-                  >
-                    <span>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </nav>
+        <aside className="w-64 flex-shrink-0">
+          <nav className="sticky top-0 bg-white shadow-sm h-screen overflow-y-auto">
+            <div className="p-6">
+              <ul className="space-y-2">
+                {navigationItems.map((item) => (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === item.path
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
+        </aside>
 
         {/* Main Content */}
         <main className="flex-1 p-6">
