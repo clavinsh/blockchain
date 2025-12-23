@@ -16,7 +16,8 @@ type QueryResult struct {
 
 // GetAllTelemetry returns all telemetry records from world state
 func (c *VehicleContract) GetAllTelemetry(ctx contractapi.TransactionContextInterface) ([]*VehicleTelemetry, error) {
-	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+	// Use partial composite key to get all telemetry records
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("telemetry", []string{})
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +52,7 @@ func (c *VehicleContract) GetTelemetryAfter(
 			"insertTime": {
 				"$gt": "%s"
 			}
-		},
-		"sort": [{"insertTime": "desc"}]
+		}
 	}`, timestamp)
 
 	return c.getQueryResultForQueryString(ctx, queryString)
@@ -86,7 +86,6 @@ func (c *VehicleContract) GetTelemetryByRange(
 
 	queryMap := map[string]interface{}{
 		"selector": selector,
-		"sort":     []map[string]string{{"insertTime": "desc"}},
 	}
 
 	queryBytes, err := json.Marshal(queryMap)
