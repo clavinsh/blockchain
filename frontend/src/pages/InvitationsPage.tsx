@@ -35,6 +35,20 @@ export default function InvitationsPage() {
     }
   }
 
+  const formatLocalDateTime = (dateString: string) => {
+    // Parse the UTC date string and convert to local time
+    // Ensure the date string is treated as UTC by appending 'Z' if not present
+    const utcDateString = dateString.endsWith('Z') ? dateString : dateString + 'Z'
+    const date = new Date(utcDateString)
+    return date.toLocaleString('lv-LV', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   const loadReceivedInvites = async () => {
     setIsLoading(true)
     try {
@@ -137,13 +151,7 @@ export default function InvitationsPage() {
                             <span className="font-medium">Loma:</span> {getRoleLabel(invite.roleCode)}
                           </p>
                           <p>
-                            <span className="font-medium">Nosūtīts:</span> {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('lv-LV', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            }) : 'Nav zināms'}
+                            <span className="font-medium">Nosūtīts:</span> {invite.createdAt ? formatLocalDateTime(invite.createdAt) : 'Nav zināms'}
                           </p>
                         </div>
 
