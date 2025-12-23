@@ -8,42 +8,38 @@ NC='\033[0m'
 
 API_URL="http://localhost:3001"
 
-echo -e "${GREEN}Testing UBI Fabric Gateway API${NC}"
+echo -e "${GREEN}Testing Fabric Gateway Telemetry API${NC}"
 echo "=================================="
 
 echo -e "\n${GREEN}1. Health check...${NC}"
 curl -s "$API_URL/health" | jq .
 
-echo -e "\n${GREEN}2. Registering a test vehicle...${NC}"
-curl -s -X POST "$API_URL/api/vehicles/register" \
+echo -e "\n${GREEN}2. Submitting telemetry for car 1...${NC}"
+curl -s -X POST "$API_URL/api/telemetry/submit" \
     -H "Content-Type: application/json" \
     -d '{
-        "onChainId": "vehicle-001",
-        "vin": "1HGBH41JXMN109186",
-        "ownerUserId": "user-123"
+        "carId": "1",
+        "carData": "{\"speed\": 65, \"rpm\": 3000, \"fuel\": 75}"
     }' | jq .
 
-echo -e "\n${GREEN}3. Reading the vehicle...${NC}"
-curl -s "$API_URL/api/vehicles/vehicle-001" | jq .
-
-echo -e "\n${GREEN}4. Submitting telemetry hash...${NC}"
-curl -s -X POST "$API_URL/api/telemetry/hash" \
+echo -e "\n${GREEN}3. Submitting telemetry for car 2...${NC}"
+curl -s -X POST "$API_URL/api/telemetry/submit" \
     -H "Content-Type: application/json" \
     -d '{
-        "onChainId": "vehicle-001",
-        "dataHash": "abc123hash456"
+        "carId": "2",
+        "carData": "{\"speed\": 45, \"rpm\": 2200, \"fuel\": 50}"
     }' | jq .
 
-echo -e "\n${GREEN}5. Granting access to insurance company...${NC}"
-curl -s -X POST "$API_URL/api/access/grant" \
-    -H "Content-Type: application/json" \
-    -d '{
-        "onChainId": "vehicle-001",
-        "insuranceCompanyId": "insurance-co-1",
-        "durationDays": 30
-    }' | jq .
+echo -e "\n${GREEN}4. Getting telemetry for car 1...${NC}"
+curl -s "$API_URL/api/telemetry/vehicle/1" | jq .
 
-echo -e "\n${GREEN}6. Reading access grant...${NC}"
-curl -s "$API_URL/api/access/vehicle-001/insurance-co-1" | jq .
+echo -e "\n${GREEN}5. Getting all telemetry...${NC}"
+curl -s "$API_URL/api/telemetry/all" | jq .
+
+echo -e "\n${GREEN}6. Getting telemetry after timestamp...${NC}"
+curl -s "$API_URL/api/telemetry/after?timestamp=2024-01-01T00:00:00Z" | jq .
+
+echo -e "\n${GREEN}7. Getting telemetry by range for car 1...${NC}"
+curl -s "$API_URL/api/telemetry/range?carId=1&startTime=2024-01-01T00:00:00Z&endTime=2030-12-31T23:59:59Z" | jq .
 
 echo -e "\n${GREEN}All tests completed!${NC}"

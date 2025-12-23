@@ -34,43 +34,20 @@ func main() {
 		c.Next()
 	})
 
-	vehicleHandler := handlers.NewVehicleHandler(fabricClient)
 	telemetryHandler := handlers.NewTelemetryHandler(fabricClient)
-	accessHandler := handlers.NewAccessHandler(fabricClient)
-	queryHandler := handlers.NewQueryHandler(fabricClient)
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	vehicleRoutes := router.Group("/api/vehicles")
-	{
-		vehicleRoutes.POST("/register", vehicleHandler.RegisterVehicle)
-		vehicleRoutes.GET("/:onChainId", vehicleHandler.ReadVehicle)
-	}
-
+	// Telemetry routes - these match the chaincode functions
 	telemetryRoutes := router.Group("/api/telemetry")
 	{
-		telemetryRoutes.POST("/hash", telemetryHandler.SubmitDataHash)
-	}
-
-	accessRoutes := router.Group("/api/access")
-	{
-		accessRoutes.POST("/grant", accessHandler.GrantAccess)
-		accessRoutes.GET("/:onChainId/:companyId", accessHandler.ReadAccess)
-		accessRoutes.GET("/vehicle/:onChainId/grants", queryHandler.GetAccessGrantsByVehicle)
-	}
-
-	// Query routes for complex queries
-	queryRoutes := router.Group("/api/query")
-	{
-		queryRoutes.GET("/vehicles", queryHandler.GetAllVehicles)
-		queryRoutes.GET("/vehicles/owner/:ownerUserId", queryHandler.GetVehiclesByOwner)
-		queryRoutes.GET("/vehicles/vin", queryHandler.GetVehiclesByVINPrefix)
-		queryRoutes.GET("/vehicles/registered-after", queryHandler.GetVehiclesRegisteredAfter)
-		queryRoutes.GET("/vehicles/search", queryHandler.GetVehiclesByMultipleCriteria)
-		queryRoutes.GET("/vehicles/paginated", queryHandler.QueryVehiclesWithPagination)
-		queryRoutes.GET("/vehicles/:onChainId/history", queryHandler.GetVehicleHistory)
+		telemetryRoutes.POST("/submit", telemetryHandler.SubmitTelemetry)
+		telemetryRoutes.GET("/vehicle/:carId", telemetryHandler.GetTelemetryByVehicle)
+		telemetryRoutes.GET("/all", telemetryHandler.GetAllTelemetry)
+		telemetryRoutes.GET("/after", telemetryHandler.GetTelemetryAfter)
+		telemetryRoutes.GET("/range", telemetryHandler.GetTelemetryByRange)
 	}
 
 	go func() {

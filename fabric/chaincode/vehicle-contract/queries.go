@@ -48,45 +48,45 @@ func (c *VehicleContract) GetTelemetryAfter(
 ) ([]*VehicleTelemetry, error) {
 	queryString := fmt.Sprintf(`{
 		"selector": {
-			"insertedAt": {
+			"insertTime": {
 				"$gt": "%s"
 			}
 		},
-		"sort": [{"insertedAt": "desc"}]
+		"sort": [{"insertTime": "desc"}]
 	}`, timestamp)
 
 	return c.getQueryResultForQueryString(ctx, queryString)
 }
 
-// GetTelemetryByVehicleAndTimeRange returns telemetry for a vehicle within a time range
-func (c *VehicleContract) GetTelemetryByVehicleAndTimeRange(
+// GetTelemetryByRange returns telemetry for a vehicle within a time range
+func (c *VehicleContract) GetTelemetryByRange(
 	ctx contractapi.TransactionContextInterface,
-	vehicleID string,
+	carId string,
 	startTime string,
 	endTime string,
 ) ([]*VehicleTelemetry, error) {
 	selector := map[string]interface{}{
-		"vehicleId": vehicleID,
+		"carId": carId,
 	}
 
 	if startTime != "" && endTime != "" {
-		selector["insertedAt"] = map[string]interface{}{
+		selector["insertTime"] = map[string]interface{}{
 			"$gte": startTime,
 			"$lte": endTime,
 		}
 	} else if startTime != "" {
-		selector["insertedAt"] = map[string]interface{}{
+		selector["insertTime"] = map[string]interface{}{
 			"$gte": startTime,
 		}
 	} else if endTime != "" {
-		selector["insertedAt"] = map[string]interface{}{
+		selector["insertTime"] = map[string]interface{}{
 			"$lte": endTime,
 		}
 	}
 
 	queryMap := map[string]interface{}{
 		"selector": selector,
-		"sort":     []map[string]string{{"insertedAt": "desc"}},
+		"sort":     []map[string]string{{"insertTime": "desc"}},
 	}
 
 	queryBytes, err := json.Marshal(queryMap)
