@@ -1140,6 +1140,38 @@ export const telemetryApi = {
   },
 };
 
+// Telemetry report API
+export const telemetryApiReport = {
+  /**
+   * Get route data for a specific vehicle within a time range
+   * @param carId 
+   * @param from 
+   * @param to 
+   * @returns Route data as JSON 
+   */
+  getRouteData: async (carId: number, from: Date, to: Date) => {
+    const token = tokenManager.getToken();
+    if (!token) throw new Error('No authentication token found');
+
+    const params = new URLSearchParams({
+      carId: carId.toString(),
+      from: from.toISOString(),
+      to: to.toISOString(),
+    });
+    
+    const url = `${API_BASE_URL}/telemetry/route?${params.toString()}`;
+
+    const response = await fetch(url, { method: 'GET', headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` }});
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message);
+    }
+    return response.json();
+  },
+};
+
+
 export const tokenManager = {
   getToken: (): string | null => {
     return localStorage.getItem('authToken');
