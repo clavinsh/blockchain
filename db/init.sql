@@ -81,9 +81,9 @@ INSERT INTO UserTable (Username, Email, PasswordHash, FirstName, LastName) VALUE
 ('jane_smith', 'jane.smith@example.com', '$2b$12$odq0FbVBjHkgO1nSq7ent.PG.nR5D.aV6WkX6oEohbta.iNIWSwJa', 'Jane', 'Smith');
 
 INSERT INTO CarTable (Brand, Model, Year, LicensePlate, VIN, Color, Mileage) VALUES
-('Toyota', 'Camry', 2022, 'ABC123', '1HGBH41JXMN109186', 'Silver', 15000),
-('Honda', 'Civic', 2021, 'XYZ789', '2HGFG12648H543210', 'Blue', 22000),
-('Tesla', 'Model 3', 2023, 'EV001', '5YJ3E1EA5JF000001', 'White', 8000);
+('Toyota', 'Camry', 2022, 'AA-2341', '1HGBH41JXMN109186', 'Silver', 15000),
+('Honda', 'Civic', 2021, 'EA-5678', '2HGFG12648H543210', 'Blue', 22000),
+('Tesla', 'Model 3', 2023, 'EX-9012', '5YJ3E1EA5JF000001', 'White', 8000);
 
 INSERT INTO Users2Cars (UserId, CarId, RoleCode) VALUES
 (1, 1, 'OWNER'),
