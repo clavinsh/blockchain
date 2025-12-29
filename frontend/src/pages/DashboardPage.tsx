@@ -55,10 +55,11 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    if (selectedCarId) {
+    if (selectedCarId && routeFromDate && routeToDate) {
       fetchCarRouteData(selectedCarId, routeFromDate, routeToDate)
     } else {
       setRouteData(null)
+      setRouteDataError(null)
     }
   }, [selectedCarId, routeFromDate, routeToDate])
 
