@@ -1,0 +1,8 @@
+{
+  "index": {
+    "fields": ["insertTime", "carId"]
+  },
+  "ddoc": "indexTelemetryDoc",
+  "name": "indexTelemetry",
+  "type": "json"
+}

@@ -16,7 +16,8 @@ type QueryResult struct {
 
 // GetAllTelemetry returns all telemetry records from world state
 func (c *VehicleContract) GetAllTelemetry(ctx contractapi.TransactionContextInterface) ([]*VehicleTelemetry, error) {
-	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+	// Use partial composite key to get all telemetry records
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("telemetry", []string{})
 	if err != nil {
 		return nil, err
 	}
@@ -48,45 +49,43 @@ func (c *VehicleContract) GetTelemetryAfter(
 ) ([]*VehicleTelemetry, error) {
 	queryString := fmt.Sprintf(`{
 		"selector": {
-			"insertedAt": {
+			"insertTime": {
 				"$gt": "%s"
 			}
-		},
-		"sort": [{"insertedAt": "desc"}]
+		}
 	}`, timestamp)
 
 	return c.getQueryResultForQueryString(ctx, queryString)
 }
 
-// GetTelemetryByVehicleAndTimeRange returns telemetry for a vehicle within a time range
-func (c *VehicleContract) GetTelemetryByVehicleAndTimeRange(
+// GetTelemetryByRange returns telemetry for a vehicle within a time range
+func (c *VehicleContract) GetTelemetryByRange(
 	ctx contractapi.TransactionContextInterface,
-	vehicleID string,
+	carId string,
 	startTime string,
 	endTime string,
 ) ([]*VehicleTelemetry, error) {
 	selector := map[string]interface{}{
-		"vehicleId": vehicleID,
+		"carId": carId,
 	}
 
 	if startTime != "" && endTime != "" {
-		selector["insertedAt"] = map[string]interface{}{
+		selector["insertTime"] = map[string]interface{}{
 			"$gte": startTime,
 			"$lte": endTime,
 		}
 	} else if startTime != "" {
-		selector["insertedAt"] = map[string]interface{}{
+		selector["insertTime"] = map[string]interface{}{
 			"$gte": startTime,
 		}
 	} else if endTime != "" {
-		selector["insertedAt"] = map[string]interface{}{
+		selector["insertTime"] = map[string]interface{}{
 			"$lte": endTime,
 		}
 	}
 
 	queryMap := map[string]interface{}{
 		"selector": selector,
-		"sort":     []map[string]string{{"insertedAt": "desc"}},
 	}
 
 	queryBytes, err := json.Marshal(queryMap)
