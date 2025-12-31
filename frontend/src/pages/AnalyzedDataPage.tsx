@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useCarContext } from '@/contexts/CarContext'
-import { 
-  telemetryApi, 
-  type VehicleTelemetry, 
-  type DrivingReport, 
-  type InsuranceSummary, 
-  type ResellerSummary 
+import {
+  telemetryApi,
+  type VehicleTelemetry,
+  type DrivingReport,
+  type InsuranceSummary,
+  type ResellerSummary
 } from '@/services/api'
+import RouteMap from '@/components/RouteMap'
 
 export default function AnalyzedDataPage() {
   const { selectedCarId, selectedCar } = useCarContext()
@@ -20,9 +21,9 @@ export default function AnalyzedDataPage() {
   // Get user role from selected car
   const userRole = selectedCar?.roleCode || ''
   const isViewer = userRole === 'VIEWER'
-  
+
   // Set default tab based on role
-  const [activeTab, setActiveTab] = useState<'driving' | 'insurance' | 'reseller' | 'system'>(
+  const [activeTab, setActiveTab] = useState<'map' | 'driving' | 'insurance' | 'reseller' | 'system'>(
     isViewer ? 'insurance' : 'driving'
   )
 
@@ -30,9 +31,9 @@ export default function AnalyzedDataPage() {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       console.log('Fetching telemetry data for car ID:', carId)
-      
+
       // Load telemetry data from CarDataCache (MySQL)
       // Note: This displays MySQL cache data, not live blockchain
       try {
@@ -195,44 +196,49 @@ export default function AnalyzedDataPage() {
             {!isViewer && (
               <button
                 onClick={() => setActiveTab('driving')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'driving'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'driving'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 Braukšanas atskaite
               </button>
             )}
             <button
               onClick={() => setActiveTab('insurance')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'insurance'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'insurance'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               Apdrošināšanas atskaite
             </button>
             <button
               onClick={() => setActiveTab('reseller')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'reseller'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'reseller'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               Pārdevēja atskaite
             </button>
             <button
               onClick={() => setActiveTab('system')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'system'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'system'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               Sistēmas informācija ({blockchainData.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('map')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'map'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+            >
+              Maršruta karte
             </button>
           </nav>
         </div>
@@ -349,7 +355,7 @@ export default function AnalyzedDataPage() {
                   <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Braukšanas rezultāts</h3>
                     <p className="text-3xl font-bold text-blue-600">{insuranceSummary.drivingScore.toFixed(1)}</p>
-                  </div> 
+                  </div>
                   <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Drošības incidenti</h3>
                     <p className="text-3xl font-bold text-orange-600">{insuranceSummary.safetyIncidents}</p>
@@ -559,6 +565,9 @@ export default function AnalyzedDataPage() {
                   </ul>
                 </div>
               </div>
+            )}
+            {activeTab === 'map' && (
+              <RouteMap carId={selectedCarId} routeColor="red" defaultFromDate='2025-11-28T00:00' defaultToDate='2025-11-28T23:59' />
             )}
           </>
         )}
