@@ -44,10 +44,9 @@ export default function AnalyzedDataPage() {
         setBlockchainData([])
       }
 
-      // Calculate date range for reports (last 30 days)
+      // Calculate date range for reports (all time)
       const endDate = new Date()
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - 30)
+      const startDate = new Date(0)
 
       // Fetch reports based on role
       if (!isViewer) {
@@ -458,7 +457,7 @@ export default function AnalyzedDataPage() {
               <div className="space-y-6">
                 {/* System Status */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-blue-900 mb-4">🔗 Sistēmas stāvoklis</h3>
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">Sistēmas stāvoklis</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <div className="flex items-center justify-between">
@@ -499,7 +498,7 @@ export default function AnalyzedDataPage() {
 
                 {/* Blockchain Architecture */}
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">🏗️ Blockchain arhitektūra</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Blockchain arhitektūra</h3>
                   <div className="space-y-3 text-sm text-gray-700">
                     <div className="flex items-start">
                       <span className="font-semibold min-w-32">Kanāls:</span>
@@ -522,22 +521,22 @@ export default function AnalyzedDataPage() {
 
                 {/* Available Functions */}
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ Pieejamās funkcijas</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Pieejamās funkcijas</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">🚗 Transportlīdzekļu reģistrācija</h4>
+                      <h4 className="font-semibold text-gray-900 mb-1">Transportlīdzekļu reģistrācija</h4>
                       <p className="text-xs text-gray-600">Nemainīga reģistrācijas vēsture blockchain ledger'ī</p>
                     </div>
                     <div className="border-l-4 border-green-500 bg-green-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">🔐 Piekļuves kontrole</h4>
+                      <h4 className="font-semibold text-gray-900 mb-1">Piekļuves kontrole</h4>
                       <p className="text-xs text-gray-600">Decentralizēta lietotāju tiesību pārvaldība</p>
                     </div>
                     <div className="border-l-4 border-purple-500 bg-purple-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">📊 Telemetrijas analīze</h4>
+                      <h4 className="font-semibold text-gray-900 mb-1">Telemetrijas analīze</h4>
                       <p className="text-xs text-gray-600">Braukšanas datu apstrāde un atskaišu ģenerēšana</p>
                     </div>
                     <div className="border-l-4 border-orange-500 bg-orange-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">📝 Audita žurnāls</h4>
+                      <h4 className="font-semibold text-gray-900 mb-1">Audita žurnāls</h4>
                       <p className="text-xs text-gray-600">Pilnīga izmaiņu vēsture ar laika zīmogiem</p>
                     </div>
                   </div>
@@ -545,21 +544,18 @@ export default function AnalyzedDataPage() {
 
                 {/* Data Storage Info */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">💾 Datu glabāšana</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Datu glabāšana</h3>
                   <p className="text-sm text-gray-700 mb-3">
                     Sistēma izmanto hibrīdu pieeju datu glabāšanai:
                   </p>
                   <ul className="space-y-2 text-sm text-gray-600">
                     <li className="flex items-start">
-                      <span className="mr-2">🔗</span>
                       <span><strong>Blockchain:</strong> Auto reģistrācijas metadati, īpašumtiesības, piekļuves tiesības</span>
                     </li>
                     <li className="flex items-start">
-                      <span className="mr-2">💿</span>
                       <span><strong>MySQL:</strong> Telemetrijas dati kešatmiņā ātrākai piekļuvei un analīzei</span>
                     </li>
                     <li className="flex items-start">
-                      <span className="mr-2">⚡</span>
                       <span><strong>Priekšrocības:</strong> Blockchain drošība + SQL vaicājumu ātrums</span>
                     </li>
                   </ul>
