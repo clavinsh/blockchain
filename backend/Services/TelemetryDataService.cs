@@ -2,6 +2,7 @@ namespace backend.Services;
 
 using backend.DTOs;
 using backend.Models;
+using backend.Services.Fabric;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -11,6 +12,8 @@ using System.Text.Json;
 public class TelemetryDataService
 {
     private readonly BlockchainDbContext _context;
+    private readonly IConfiguration _configuration;
+    private readonly TelemetryService? _telemetryService;
 
     // Thresholds for analysis
     private const double HARSH_BRAKING_THRESHOLD = -0.3;  // g-force
@@ -18,9 +21,14 @@ public class TelemetryDataService
     private const double HARSH_CORNERING_THRESHOLD = 0.25;  // g-force
     private const double SPEEDING_THRESHOLD_URBAN = 50.0;  // km/h
 
-    public TelemetryDataService(BlockchainDbContext context)
+    public TelemetryDataService(
+        BlockchainDbContext context,
+        IConfiguration configuration,
+        TelemetryService? telemetryService = null)
     {
         _context = context;
+        _configuration = configuration;
+        _telemetryService = telemetryService;
     }
 
     /// <summary>
@@ -172,6 +180,58 @@ public class TelemetryDataService
     /// <param name="to">End date of the period</param>
     /// <returns>List of vehicle sensor data within the specified period</returns>
     private async Task<List<VehicleSensorData>> FetchTelemetryDataAsync(int carId, DateTime from, DateTime to)
+    {
+        // Check if Fabric is enabled in configuration
+        var useFabric = _configuration.GetValue<bool>("Fabric:Enabled", false);
+
+        if (useFabric && _telemetryService != null)
+        {
+            // Fetch data from Fabric blockchain
+            return await FetchTelemetryFromFabricAsync(carId, from, to);
+        }
+        else
+        {
+            // Fetch data from CarDataCache (traditional database)
+            return await FetchTelemetryFromCacheAsync(carId, from, to);
+        }
+    }
+
+    private async Task<List<VehicleSensorData>> FetchTelemetryFromFabricAsync(int carId, DateTime from, DateTime to)
+    {
+        if (_telemetryService == null)
+        {
+            throw new InvalidOperationException("TelemetryService is not available");
+        }
+
+        // Fetch all telemetry for the vehicle from blockchain
+        var fabricTelemetry = await _telemetryService.GetTelemetryByVehicleAsync(carId.ToString());
+
+        var telemetryDataList = new List<VehicleSensorData>();
+
+        // Filter by date range and deserialize
+        foreach (var entry in fabricTelemetry)
+        {
+            if (entry.InsertTime >= from && entry.InsertTime <= to)
+            {
+                try
+                {
+                    var sensorData = JsonSerializer.Deserialize<VehicleSensorData>(entry.CarData);
+                    if (sensorData != null)
+                    {
+                        telemetryDataList.Add(sensorData);
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Console.WriteLine($"Failed to deserialize Fabric telemetry for CarId {carId}: {ex.Message}");
+                }
+            }
+        }
+
+        return telemetryDataList.OrderBy(x => x.Timestamp).ToList();
+    }
+
+    private async Task<List<VehicleSensorData>> FetchTelemetryFromCacheAsync(int carId, DateTime from, DateTime to)
     {
         // Fetch data from CarDataCache where InsertTime is between from and to
         var cacheEntries = await _context.CarDataCaches
