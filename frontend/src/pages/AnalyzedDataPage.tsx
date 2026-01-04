@@ -281,8 +281,31 @@ export default function AnalyzedDataPage() {
                     Export JSON
                   </button>
                 </div>
+                {/* Report Metadata */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Report Generated:</span>
+                      <span className="ml-2 font-semibold text-gray-900">
+                        {new Date(drivingReport.reportGeneratedAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Analysis Period:</span>
+                      <span className="ml-2 font-semibold text-gray-900">
+                        {new Date(drivingReport.analysisPeriod.startDate).toLocaleDateString()} - {new Date(drivingReport.analysisPeriod.endDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Data Points:</span>
+                      <span className="ml-2 font-semibold text-gray-900">
+                        {drivingReport.basicStatistics.dataPointsAnalyzed.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 {/* Overview Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Driving Score</h3>
                     <p className="text-3xl font-bold text-blue-600">{drivingReport.overallDrivingScore.toFixed(1)}</p>
@@ -293,19 +316,64 @@ export default function AnalyzedDataPage() {
                     <p className="text-2xl font-bold text-gray-900">
                       {drivingReport.basicStatistics.totalDistance.toFixed(1)} km
                     </p>
+                    <p className="text-xs text-gray-500 mt-1">{drivingReport.basicStatistics.numberOfTrips} trips</p>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Average Speed</h3>
                     <p className="text-2xl font-bold text-gray-900">
                       {drivingReport.basicStatistics.averageSpeed.toFixed(1)} km/h
                     </p>
+                    <p className="text-xs text-gray-500 mt-1">Max: {drivingReport.basicStatistics.maxSpeed.toFixed(0)} km/h</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Fuel Consumption</h3>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {drivingReport.basicStatistics.fuelConsumption.toFixed(1)} L
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Total consumed</p>
+                  </div>
+                </div>
+
+                {/* Additional Statistics */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Statistics</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Total Driving Time</p>
+                      <p className="font-semibold text-gray-900 mt-1">
+                        {(() => {
+                          const timeStr = drivingReport.basicStatistics.totalDrivingTime;
+                          // Parse TimeSpan format (HH:MM:SS or D.HH:MM:SS)
+                          const parts = timeStr.split(':');
+                          if (parts.length >= 2) {
+                            const hoursStr = parts[0].includes('.') ? parts[0].split('.')[1] : parts[0];
+                            const hours = parseInt(hoursStr);
+                            const minutes = parseInt(parts[1]);
+                            return `${hours}h ${minutes}m`;
+                          }
+                          return timeStr;
+                        })()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Average RPM</p>
+                      <p className="font-semibold text-gray-900 mt-1">{drivingReport.basicStatistics.averageRpm}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Max RPM</p>
+                      <p className="font-semibold text-gray-900 mt-1">{drivingReport.basicStatistics.maxRpm}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Smooth Driving</p>
+                      <p className="font-semibold text-green-600 mt-1">{drivingReport.drivingBehavior.smoothDrivingPercentage.toFixed(1)}%</p>
+                    </div>
                   </div>
                 </div>
 
                 {/* Risk Assessment */}
                 <div className="bg-white rounded-lg shadow p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Assessment</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600">Risk Level</p>
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getRiskLevelColor(drivingReport.riskAssessment.overallRiskLevel)}`}>
@@ -318,13 +386,45 @@ export default function AnalyzedDataPage() {
                         {drivingReport.riskAssessment.insurancePremiumMultiplier.toFixed(2)}x
                       </p>
                     </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Accident Risk Score</p>
+                      <p className="text-lg font-semibold text-orange-600">
+                        {drivingReport.riskAssessment.accidentRiskScore.toFixed(1)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Depreciation Rate</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {(drivingReport.riskAssessment.vehicleDepreciationRate * 100).toFixed(1)}%
+                      </p>
+                    </div>
                   </div>
+                  {drivingReport.riskAssessment.riskFactors.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Risk Factors</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {drivingReport.riskAssessment.riskFactors.map((factor, index) => (
+                          <li key={index} className="text-sm text-red-700">{factor}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {drivingReport.riskAssessment.positiveFactors.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Positive Factors</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {drivingReport.riskAssessment.positiveFactors.map((factor, index) => (
+                          <li key={index} className="text-sm text-green-700">{factor}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
                 {/* Vehicle Wear */}
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Wear</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Wear Estimate</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600">Brakes</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(drivingReport.vehicleWearEstimate.brakeWearLevel)}`}>
@@ -344,7 +444,54 @@ export default function AnalyzedDataPage() {
                       </p>
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                    <div>
+                      <p className="text-sm text-gray-600">Transmission Stress</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {drivingReport.vehicleWearEstimate.transmissionStress.toFixed(1)}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Est. Maintenance Cost</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        €{drivingReport.vehicleWearEstimate.estimatedMaintenanceCost.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Driving Behavior Events */}
+                {(drivingReport.drivingBehavior.harshBrakingEvents.length > 0 ||
+                  drivingReport.drivingBehavior.harshAccelerationEvents.length > 0 ||
+                  drivingReport.drivingBehavior.harshCorneringEvents.length > 0 ||
+                  drivingReport.drivingBehavior.speedingEvents.length > 0 ||
+                  drivingReport.drivingBehavior.overRevvingEvents.length > 0) && (
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Driving Behavior Events</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                      <div className="p-3 bg-red-50 rounded-lg">
+                        <p className="text-2xl font-bold text-red-600">{drivingReport.drivingBehavior.harshBrakingEvents.length}</p>
+                        <p className="text-xs text-gray-600 mt-1">Harsh Braking</p>
+                      </div>
+                      <div className="p-3 bg-orange-50 rounded-lg">
+                        <p className="text-2xl font-bold text-orange-600">{drivingReport.drivingBehavior.harshAccelerationEvents.length}</p>
+                        <p className="text-xs text-gray-600 mt-1">Harsh Acceleration</p>
+                      </div>
+                      <div className="p-3 bg-yellow-50 rounded-lg">
+                        <p className="text-2xl font-bold text-yellow-600">{drivingReport.drivingBehavior.harshCorneringEvents.length}</p>
+                        <p className="text-xs text-gray-600 mt-1">Harsh Cornering</p>
+                      </div>
+                      <div className="p-3 bg-purple-50 rounded-lg">
+                        <p className="text-2xl font-bold text-purple-600">{drivingReport.drivingBehavior.speedingEvents.length}</p>
+                        <p className="text-xs text-gray-600 mt-1">Speeding</p>
+                      </div>
+                      <div className="p-3 bg-pink-50 rounded-lg">
+                        <p className="text-2xl font-bold text-pink-600">{drivingReport.drivingBehavior.overRevvingEvents.length}</p>
+                        <p className="text-xs text-gray-600 mt-1">Over-Revving</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Recommendations */}
                 {drivingReport.recommendations.length > 0 && (
@@ -381,6 +528,15 @@ export default function AnalyzedDataPage() {
                     </svg>
                     Export JSON
                   </button>
+                </div>
+                {/* Report Metadata */}
+                <div className="inline-block bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="text-sm">
+                    <span className="text-gray-600">Analysis Period:</span>
+                    <span className="ml-2 font-semibold text-gray-900">
+                      {new Date(insuranceSummary.analysisPeriod.startDate).toLocaleDateString()} - {new Date(insuranceSummary.analysisPeriod.endDate).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-white rounded-lg shadow p-6">
@@ -444,18 +600,50 @@ export default function AnalyzedDataPage() {
                     Export JSON
                   </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Report Metadata */}
+                <div className="inline-block bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="text-sm">
+                    <span className="text-gray-600">Analysis Period:</span>
+                    <span className="ml-2 font-semibold text-gray-900">
+                      {new Date(resellerSummary.analysisPeriod.startDate).toLocaleDateString()} - {new Date(resellerSummary.analysisPeriod.endDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Driving Score</h3>
                     <p className="text-3xl font-bold text-blue-600">{resellerSummary.drivingScore.toFixed(1)}</p>
+                    <p className="text-xs text-gray-500 mt-1">out of 100</p>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Condition Rating</h3>
                     <p className="text-2xl font-bold text-gray-900">{resellerSummary.vehicleConditionRating}</p>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Total Distance</h3>
+                    <p className="text-2xl font-bold text-gray-900">{resellerSummary.totalDistance.toFixed(1)} km</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Maintenance Costs</h3>
                     <p className="text-2xl font-bold text-gray-900">€{resellerSummary.estimatedMaintenanceCost.toFixed(2)}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Value</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Estimated Depreciation Rate</p>
+                      <p className="text-2xl font-semibold text-gray-900 mt-1">
+                        {(resellerSummary.estimatedDepreciationRate * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Condition Rating</p>
+                      <p className="text-2xl font-semibold text-gray-900 mt-1">
+                        {resellerSummary.vehicleConditionRating}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
