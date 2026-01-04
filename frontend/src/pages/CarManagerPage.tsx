@@ -387,8 +387,8 @@ export default function CarManagerPage() {
   }
 
   return (
-    <div>
-      <main className="p-6">
+    <div className="w-full">
+      <main className="p-4 sm:p-6">
         {/* Create/Edit Car Section */}
         <div className="mb-8 bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -635,12 +635,12 @@ export default function CarManagerPage() {
                         <div>Color: {car.color || 'Not specified'}</div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
-                      <span className="text-xs text-gray-500">
+                    <div className="pt-3 mt-3 border-t border-gray-100 space-y-2">
+                      <span className="text-xs text-gray-500 block">
                         Added: {car.assignedAt ? new Date(car.assignedAt).toLocaleDateString('en-US') : 'Unknown'}
                       </span>
-                      <div className="flex space-x-2">
-                        {car.roleCode === 'OWNER' && (
+                      {car.roleCode === 'OWNER' && (
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
@@ -651,8 +651,6 @@ export default function CarManagerPage() {
                           >
                             Edit
                           </Button>
-                        )}
-                        {car.roleCode === 'OWNER' && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -664,8 +662,8 @@ export default function CarManagerPage() {
                           >
                             Delete
                           </Button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -691,7 +689,7 @@ export default function CarManagerPage() {
                   {/* Invite User Section */}
                   <div>
                     <h3 className="text-md font-semibold text-gray-900 mb-3">Invite User</h3>
-                    <div className="flex space-x-4">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:space-x-4 sm:gap-0">
                       <input
                         type="email"
                         placeholder="User's email"
@@ -702,7 +700,7 @@ export default function CarManagerPage() {
                       <select
                         value={newInviteRole}
                         onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'DRIVER' | 'VIEWER')}
-                        className="border border-blue-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="border border-blue-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
                       >
                         <option value="DRIVER">Driver</option>
                         <option value="VIEWER">Viewer</option>
@@ -710,7 +708,7 @@ export default function CarManagerPage() {
                       <Button
                         onClick={handleInvite}
                         disabled={!newInviteEmail || isLoading}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
                       >
                         {isLoading ? 'Sending...' : 'Invite'}
                       </Button>
@@ -736,14 +734,14 @@ export default function CarManagerPage() {
                     </div>
                   ) : (
                     carUsers.map((user) => (
-                      <div key={user.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <span className="font-medium text-gray-900">
+                      <div key={user.id} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                              <span className="font-medium text-gray-900 text-sm break-words">
                                 {user.username} ({user.email})
                               </span>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
+                              <span className={`px-2 py-1 text-xs rounded-full whitespace-nowrap inline-block w-fit ${
                                 user.roleCode === 'OWNER' ? 'bg-purple-100 text-purple-800' : 
                                 user.roleCode === 'DRIVER' ? 'bg-blue-100 text-blue-800' :
                                 user.roleCode === 'VIEWER' ? 'bg-green-100 text-green-800' :
@@ -759,22 +757,22 @@ export default function CarManagerPage() {
                             
                             {/* Role Management - Only show if not OWNER (OWNER requires ownership transfer) */}
                             {canInviteUsers && user.roleCode !== 'OWNER' && (
-                              <div className="flex items-center space-x-2 mt-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
                                 <span className="text-xs text-gray-500">Change role:</span>
-                                <select
-                                  value={roleChanges[user.userId] || user.roleCode}
-                                  onChange={(e) => setRoleChanges(prev => ({ ...prev, [user.userId]: e.target.value }))}
-                                  className="text-xs border border-gray-300 rounded px-2 py-1"
-                                  disabled={isChangingRole[user.userId]}
-                                >
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <select
+                                    value={roleChanges[user.userId] || user.roleCode}
+                                    onChange={(e) => setRoleChanges(prev => ({ ...prev, [user.userId]: e.target.value }))}
+                                    className="text-xs border border-gray-300 rounded px-2 py-1 flex-shrink-0"
+                                    disabled={isChangingRole[user.userId]}
+                                  >
                                   {getRoleOptions(user.roleCode).map(role => (
                                     <option key={role} value={role}>
                                       {getRoleDisplayName(role)}
                                     </option>
-                                  ))}
-                                </select>
+                                  ))}\n                                </select>
                                 {roleChanges[user.userId] && roleChanges[user.userId] !== user.roleCode && (
-                                  <div className="flex space-x-1">
+                                  <div className="flex gap-1">
                                     <Button
                                       onClick={() => handleChangeUserRole(user.userId, roleChanges[user.userId])}
                                       size="sm"
@@ -798,6 +796,7 @@ export default function CarManagerPage() {
                                     </Button>
                                   </div>
                                 )}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -808,7 +807,7 @@ export default function CarManagerPage() {
                               onClick={() => handleRemoveUserAccess(user.userId)}
                               variant="outline"
                               size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto whitespace-nowrap"
                             >
                               Remove
                             </Button>
@@ -832,12 +831,12 @@ export default function CarManagerPage() {
                     </div>
                   ) : (
                     sentInvites.map((invite) => (
-                      <div key={invite.inviteId} className="bg-white border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <span className="font-medium text-gray-900">{invite.invitedEmail}</span>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
+                      <div key={invite.inviteId} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                              <span className="font-medium text-gray-900 text-sm break-words">{invite.invitedEmail}</span>
+                              <span className={`px-2 py-1 text-xs rounded-full whitespace-nowrap inline-block w-fit ${
                                 invite.inviteStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                                 invite.inviteStatus === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
                                 invite.inviteStatus === 'DECLINED' ? 'bg-red-100 text-red-800' :
@@ -859,6 +858,7 @@ export default function CarManagerPage() {
                               onClick={() => handleCancelInvite(invite.inviteId)}
                               variant="outline"
                               size="sm"
+                              className="w-full sm:w-auto"
                             >
                               Cancel
                             </Button>
@@ -881,7 +881,7 @@ export default function CarManagerPage() {
                         This action is irreversible.
                       </p>
                     </div>
-                    <div className="flex space-x-4">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:space-x-4 sm:gap-0">
                       <input
                         type="email"
                         placeholder="New owner's email"
@@ -893,7 +893,7 @@ export default function CarManagerPage() {
                       <Button
                         onClick={handleTransferOwnership}
                         disabled={!transferOwnerEmail.trim() || isTransferring}
-                        className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                        className="bg-yellow-600 hover:bg-yellow-700 text-white w-full sm:w-auto whitespace-nowrap"
                       >
                         {isTransferring ? 'Transferring...' : 'Transfer Ownership'}
                       </Button>
@@ -905,8 +905,8 @@ export default function CarManagerPage() {
               {/* Car Details */}
               <div>
                 <h3 className="text-md font-semibold text-gray-900 mb-3">Car Details</h3>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <span className="text-sm font-medium text-gray-600">Brand:</span>
                       <p className="text-sm text-gray-900">{selectedCar.brand}</p>
@@ -925,7 +925,7 @@ export default function CarManagerPage() {
                     </div>
                     <div>
                       <span className="text-sm font-medium text-gray-600">VIN:</span>
-                      <p className="text-sm text-gray-900">{selectedCar.vin || 'Not specified'}</p>
+                      <p className="text-sm text-gray-900 break-all">{selectedCar.vin || 'Not specified'}</p>
                     </div>
                     <div>
                       <span className="text-sm font-medium text-gray-600">Color:</span>

@@ -194,14 +194,14 @@ export default function AnalyzedDataPage() {
   }
 
   return (
-    <div>
-      <main className="p-6">
+    <div className="w-full">
+      <main className="p-4 sm:p-6">
         {/* Car Info Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
             Blockchain Telemetry: {selectedCar.brand} {selectedCar.model}
           </h2>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             License Plate: {selectedCar.licensePlate} | Role: {getRoleLabel(userRole)}
           </p>
         </div>
@@ -214,12 +214,12 @@ export default function AnalyzedDataPage() {
         )}
 
         {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+        <div className="mb-6 border-b border-gray-200 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <nav className="-mb-px flex space-x-4 sm:space-x-8">
             {!isViewer && (
               <button
                 onClick={() => setActiveTab('driving')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'driving'
+                className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${activeTab === 'driving'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
@@ -229,7 +229,7 @@ export default function AnalyzedDataPage() {
             )}
             <button
               onClick={() => setActiveTab('insurance')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'insurance'
+              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${activeTab === 'insurance'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
@@ -238,7 +238,7 @@ export default function AnalyzedDataPage() {
             </button>
             <button
               onClick={() => setActiveTab('reseller')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'reseller'
+              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${activeTab === 'reseller'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
@@ -247,16 +247,16 @@ export default function AnalyzedDataPage() {
             </button>
             <button
               onClick={() => setActiveTab('system')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'system'
+              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${activeTab === 'system'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
-              System Information ({blockchainData.length})
+              System Info ({blockchainData.length})
             </button>
             <button
               onClick={() => setActiveTab('map')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'map'
+              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${activeTab === 'map'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
@@ -298,49 +298,49 @@ export default function AnalyzedDataPage() {
                 </div>
                 {/* Report Metadata */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
+                  <div className="grid grid-cols-1 gap-3 text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center">
                       <span className="text-gray-600">Report Generated:</span>
-                      <span className="ml-2 font-semibold text-gray-900">
+                      <span className="sm:ml-2 font-semibold text-gray-900">
                         {new Date(drivingReport.reportGeneratedAt).toLocaleString()}
                       </span>
                     </div>
-                    <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center">
                       <span className="text-gray-600">Analysis Period:</span>
-                      <span className="ml-2 font-semibold text-gray-900">
+                      <span className="sm:ml-2 font-semibold text-gray-900">
                         {new Date(drivingReport.analysisPeriod.startDate).toLocaleDateString()} - {new Date(drivingReport.analysisPeriod.endDate).toLocaleDateString()}
                       </span>
                     </div>
-                    <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center">
                       <span className="text-gray-600">Data Points:</span>
-                      <span className="ml-2 font-semibold text-gray-900">
+                      <span className="sm:ml-2 font-semibold text-gray-900">
                         {drivingReport.basicStatistics.dataPointsAnalyzed.toLocaleString()}
                       </span>
                     </div>
                   </div>
                 </div>
                 {/* Overview Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-lg shadow p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Driving Score</h3>
                     <p className="text-3xl font-bold text-blue-600">{drivingReport.overallDrivingScore.toFixed(1)}</p>
                     <p className="text-xs text-gray-500 mt-1">out of 100</p>
                   </div>
-                  <div className="bg-white rounded-lg shadow p-6">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Total Distance</h3>
                     <p className="text-2xl font-bold text-gray-900">
                       {drivingReport.basicStatistics.totalDistance.toFixed(1)} km
                     </p>
                     <p className="text-xs text-gray-500 mt-1">{drivingReport.basicStatistics.numberOfTrips} trips</p>
                   </div>
-                  <div className="bg-white rounded-lg shadow p-6">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Average Speed</h3>
                     <p className="text-2xl font-bold text-gray-900">
                       {drivingReport.basicStatistics.averageSpeed.toFixed(1)} km/h
                     </p>
                     <p className="text-xs text-gray-500 mt-1">Max: {drivingReport.basicStatistics.maxSpeed.toFixed(0)} km/h</p>
                   </div>
-                  <div className="bg-white rounded-lg shadow p-6">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Fuel Consumption</h3>
                     <p className="text-2xl font-bold text-gray-900">
                       {drivingReport.basicStatistics.fuelConsumption.toFixed(1)} L
@@ -350,9 +350,9 @@ export default function AnalyzedDataPage() {
                 </div>
 
                 {/* Additional Statistics */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Statistics</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Additional Statistics</h3>
+                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 text-sm">
                     <div>
                       <p className="text-gray-600">Total Driving Time</p>
                       <p className="font-semibold text-gray-900 mt-1">
@@ -386,9 +386,9 @@ export default function AnalyzedDataPage() {
                 </div>
 
                 {/* Risk Assessment */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Assessment</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Risk Assessment</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600">Risk Level</p>
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getRiskLevelColor(drivingReport.riskAssessment.overallRiskLevel)}`}>
@@ -437,9 +437,9 @@ export default function AnalyzedDataPage() {
                 </div>
 
                 {/* Vehicle Wear */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Wear Estimate</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Vehicle Wear Estimate</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600">Brakes</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(drivingReport.vehicleWearEstimate.brakeWearLevel)}`}>
@@ -459,7 +459,7 @@ export default function AnalyzedDataPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                     <div>
                       <p className="text-sm text-gray-600">Transmission Stress</p>
                       <p className="text-lg font-semibold text-gray-900">
@@ -481,9 +481,9 @@ export default function AnalyzedDataPage() {
                   drivingReport.drivingBehavior.harshCorneringEvents.length > 0 ||
                   drivingReport.drivingBehavior.speedingEvents.length > 0 ||
                   drivingReport.drivingBehavior.overRevvingEvents.length > 0) && (
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Driving Behavior Events</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Driving Behavior Events</h3>
+                    <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 text-center">
                       <div className="p-3 bg-red-50 rounded-lg">
                         <p className="text-2xl font-bold text-red-600">{drivingReport.drivingBehavior.harshBrakingEvents.length}</p>
                         <p className="text-xs text-gray-600 mt-1">Harsh Braking</p>
@@ -553,16 +553,16 @@ export default function AnalyzedDataPage() {
                     </span>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white rounded-lg shadow p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Driving Score</h3>
                     <p className="text-3xl font-bold text-blue-600">{insuranceSummary.drivingScore.toFixed(1)}</p>
                   </div>
-                  <div className="bg-white rounded-lg shadow p-6">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Safety Incidents</h3>
                     <p className="text-3xl font-bold text-orange-600">{insuranceSummary.safetyIncidents}</p>
                   </div>
-                  <div className="bg-white rounded-lg shadow p-6">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Premium Coefficient</h3>
                     <p className="text-3xl font-bold text-gray-900">
                       {insuranceSummary.recommendedPremiumMultiplier.toFixed(2)}x
@@ -570,8 +570,8 @@ export default function AnalyzedDataPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Detailed Information</h3>
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Detailed Information</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Risk Level</span>
@@ -624,29 +624,29 @@ export default function AnalyzedDataPage() {
                     </span>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-lg shadow p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Driving Score</h3>
                     <p className="text-3xl font-bold text-blue-600">{resellerSummary.drivingScore.toFixed(1)}</p>
                     <p className="text-xs text-gray-500 mt-1">out of 100</p>
                   </div>
-                  <div className="bg-white rounded-lg shadow p-6">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Condition Rating</h3>
                     <p className="text-2xl font-bold text-gray-900">{resellerSummary.vehicleConditionRating}</p>
                   </div>
-                  <div className="bg-white rounded-lg shadow p-6">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Total Distance</h3>
                     <p className="text-2xl font-bold text-gray-900">{resellerSummary.totalDistance.toFixed(1)} km</p>
                   </div>
-                  <div className="bg-white rounded-lg shadow p-6">
+                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Maintenance Costs</h3>
                     <p className="text-2xl font-bold text-gray-900">€{resellerSummary.estimatedMaintenanceCost.toFixed(2)}</p>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Value</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Vehicle Value</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">Estimated Depreciation Rate</p>
                       <p className="text-2xl font-semibold text-gray-900 mt-1">
@@ -662,9 +662,9 @@ export default function AnalyzedDataPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Component Condition</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Component Condition</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">Brakes</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(resellerSummary.brakeCondition)}`}>
@@ -715,9 +715,9 @@ export default function AnalyzedDataPage() {
                   </button>
                 </div>
                 {/* System Status */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-blue-900 mb-4">System Status</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 sm:p-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-4">System Status</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-600">Blockchain Network</span>
@@ -779,9 +779,9 @@ export default function AnalyzedDataPage() {
                 </div>
 
                 {/* Available Functions */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Functions</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Available Functions</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-4">
                       <h4 className="font-semibold text-gray-900 mb-1">Vehicle Registration</h4>
                       <p className="text-xs text-gray-600">Immutable registration history on blockchain ledger</p>
@@ -802,8 +802,8 @@ export default function AnalyzedDataPage() {
                 </div>
 
                 {/* Data Storage Info */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Data Storage</h3>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">Data Storage</h3>
                   <p className="text-sm text-gray-700 mb-3">
                     The system uses a hybrid approach for data storage:
                   </p>

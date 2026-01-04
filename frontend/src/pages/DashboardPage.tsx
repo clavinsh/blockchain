@@ -57,22 +57,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div>
+    <div className="w-full">
       {/* Car Info Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
           {selectedCar.brand} {selectedCar.model} ({selectedCar.year})
         </h2>
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           License Plate: {selectedCar.licensePlate}
         </p>
       </div>
 
       {/* Main content */}
       <main>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Live Data Card */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Data</h3>
             {isLoading ? (
               <div className="text-gray-500 text-center py-4">
@@ -135,26 +135,26 @@ export default function DashboardPage() {
           </div>
 
           {/* System Status Card */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
             <div className="space-y-3">
               <div className="flex items-center">
                 <div className={`w-3 h-3 ${carDataList.length > 0 ? 'bg-green-500' : 'bg-red-500'} rounded-full mr-3`}></div>
-                <span className="text-gray-700">Sensors: {carDataList.length > 0 ? 'Active' : 'Not active'}</span>
+                <span className="text-sm sm:text-base text-gray-700">Sensors: {carDataList.length > 0 ? 'Active' : 'Not active'}</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-gray-700">Blockchain: Synchronized</span>
+                <span className="text-sm sm:text-base text-gray-700">Blockchain: Synchronized</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                <span className="text-gray-700">Data records: {carDataList.length}</span>
+                <span className="text-sm sm:text-base text-gray-700">Data records: {carDataList.length}</span>
               </div>
             </div>
           </div>
 
           {/* Quick Stats Card */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Car Info</h3>
             <div className="space-y-3">
               <div className="flex justify-between">
@@ -174,16 +174,16 @@ export default function DashboardPage() {
         </div>
 
         {/* Live Data Table */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Historical Data</h3>
+        <div className="bg-white rounded-lg shadow overflow-hidden w-full">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Historical Data</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full table-auto divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data (JSON)</th>
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3 md:w-1/4">Time</th>
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data (JSON)</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                     .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                     .map((item) => (
                       <tr key={item.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 w-1/3 md:w-1/4">
                           {item.insertTime ? new Date(item.insertTime).toLocaleString('lv-LV', { 
                             timeZone: 'Europe/Riga',
                             year: 'numeric',
@@ -203,8 +203,8 @@ export default function DashboardPage() {
                             second: '2-digit'
                           }) : '-'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          <pre className="text-xs overflow-x-auto">{item.carData}</pre>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 max-w-0">
+                          <pre className="text-xs whitespace-pre-wrap break-all overflow-auto">{item.carData}</pre>
                         </td>
                       </tr>
                     ))
@@ -220,25 +220,25 @@ export default function DashboardPage() {
           </div>
           {/* Pagination Controls */}
           {carDataList.length > itemsPerPage && (
-            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-700">
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-xs sm:text-sm text-gray-700">
                 Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, carDataList.length)} of {carDataList.length} records
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ← Previous
                 </button>
-                <span className="px-3 py-1 text-sm text-gray-700">
+                <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-700">
                   Page {currentPage} of {Math.ceil(carDataList.length / itemsPerPage)}
                 </span>
                 <button
                   onClick={() => setCurrentPage(p => Math.min(Math.ceil(carDataList.length / itemsPerPage), p + 1))}
                   disabled={currentPage >= Math.ceil(carDataList.length / itemsPerPage)}
-                  className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next →
                 </button>
