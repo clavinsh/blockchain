@@ -38,8 +38,8 @@ export default function DashboardPage() {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Izvēlieties auto</h2>
-          <p className="text-gray-600">Lūdzu, izvēlieties auto no augšējās izvēlnes, lai redzētu tā datus.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Select a car</h2>
+          <p className="text-gray-600">Please select a car from the top menu to see its data.</p>
         </div>
       </div>
     )
@@ -64,7 +64,7 @@ export default function DashboardPage() {
           {selectedCar.brand} {selectedCar.model} ({selectedCar.year})
         </h2>
         <p className="text-gray-600">
-          Numurzīme: {selectedCar.licensePlate}
+          License Plate: {selectedCar.licensePlate}
         </p>
       </div>
 
@@ -73,10 +73,10 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Live Data Card */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Aktuālie dati</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Data</h3>
             {isLoading ? (
               <div className="text-gray-500 text-center py-4">
-                Ielādē datus...
+                Loading data...
               </div>
             ) : parsedLatestData ? (
               <div className="space-y-3">
@@ -85,17 +85,17 @@ export default function DashboardPage() {
                   .slice(0, 5)
                   .map(([key, value]) => {
                     const fieldNames: Record<string, string> = {
-                      VehicleId: 'Mašīnas ID',
-                      Timestamp: 'Laiks',
-                      Latitude: 'Platums',
-                      Longitude: 'Garums',
-                      Altitude: 'Augstums',
-                      Speed: 'Ātrums',
-                      FuelLevel: 'Degvielas līmenis',
-                      EngineTemp: 'Dzinēja temperatūra',
-                      BrakeFluidLevel: 'Bremžu šķidruma līmenis',
-                      TirePressure: 'Riepu spiediens',
-                      BatteryVoltage: 'Akumulatora spriegums'
+                      VehicleId: 'Vehicle ID',
+                      Timestamp: 'Time',
+                      Latitude: 'Latitude',
+                      Longitude: 'Longitude',
+                      Altitude: 'Altitude',
+                      Speed: 'Speed',
+                      FuelLevel: 'Fuel Level',
+                      EngineTemp: 'Engine Temperature',
+                      BrakeFluidLevel: 'Brake Fluid Level',
+                      TirePressure: 'Tire Pressure',
+                      BatteryVoltage: 'Battery Voltage'
                     }
                     const latvianKey = fieldNames[key] || key
                     
@@ -124,50 +124,50 @@ export default function DashboardPage() {
                     )
                   })}
                 <div className="text-xs text-gray-500 mt-4">
-                  Pēdējā atjaunināšana: {latestData?.insertTime ? new Date(latestData.insertTime).toLocaleString('lv-LV', { timeZone: 'Europe/Riga', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Nav zināms'}
+                  Last update: {latestData?.insertTime ? new Date(latestData.insertTime).toLocaleString('lv-LV', { timeZone: 'Europe/Riga', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Unknown'}
                 </div>
               </div>
             ) : (
               <div className="text-gray-500 text-center py-4">
-                Nav pieejamu datu
+                No data available
               </div>
             )}
           </div>
 
           {/* System Status Card */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sistēmas statuss</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
             <div className="space-y-3">
               <div className="flex items-center">
                 <div className={`w-3 h-3 ${carDataList.length > 0 ? 'bg-green-500' : 'bg-red-500'} rounded-full mr-3`}></div>
-                <span className="text-gray-700">Sensori: {carDataList.length > 0 ? 'Aktīvi' : 'Nav aktīvi'}</span>
+                <span className="text-gray-700">Sensors: {carDataList.length > 0 ? 'Active' : 'Not active'}</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-gray-700">Blockchain: Sinhronizēts</span>
+                <span className="text-gray-700">Blockchain: Synchronized</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                <span className="text-gray-700">Datu ieraksti: {carDataList.length}</span>
+                <span className="text-gray-700">Data records: {carDataList.length}</span>
               </div>
             </div>
           </div>
 
           {/* Quick Stats Card */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Mašīnas info</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Car Info</h3>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">Gads:</span>
+                <span className="text-gray-600">Year:</span>
                 <span className="font-medium">{selectedCar.year}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Krāsa:</span>
-                <span className="font-medium">{selectedCar.color || 'Nav norādīta'}</span>
+                <span className="text-gray-600">Color:</span>
+                <span className="font-medium">{selectedCar.color || 'Not specified'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">VIN:</span>
-                <span className="font-medium text-xs">{selectedCar.vin || 'Nav norādīts'}</span>
+                <span className="font-medium text-xs">{selectedCar.vin || 'Not specified'}</span>
               </div>
             </div>
           </div>
@@ -176,14 +176,14 @@ export default function DashboardPage() {
         {/* Live Data Table */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Vēsturiskie dati</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Historical Data</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Laiks</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dati (JSON)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data (JSON)</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -211,7 +211,7 @@ export default function DashboardPage() {
                 ) : (
                   <tr>
                     <td colSpan={2} className="px-6 py-8 text-center text-sm text-gray-500">
-                      {isLoading ? 'Ielādē datus...' : 'Nav pieejamu datu'}
+                      {isLoading ? 'Loading data...' : 'No data available'}
                     </td>
                   </tr>
                 )}
@@ -222,7 +222,7 @@ export default function DashboardPage() {
           {carDataList.length > itemsPerPage && (
             <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
               <div className="text-sm text-gray-700">
-                Rāda {((currentPage - 1) * itemsPerPage) + 1} līdz {Math.min(currentPage * itemsPerPage, carDataList.length)} no {carDataList.length} ierakstiem
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, carDataList.length)} of {carDataList.length} records
               </div>
               <div className="flex gap-2">
                 <button
@@ -230,17 +230,17 @@ export default function DashboardPage() {
                   disabled={currentPage === 1}
                   className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ← Iepriekšējā
+                  ← Previous
                 </button>
                 <span className="px-3 py-1 text-sm text-gray-700">
-                  Lapa {currentPage} no {Math.ceil(carDataList.length / itemsPerPage)}
+                  Page {currentPage} of {Math.ceil(carDataList.length / itemsPerPage)}
                 </span>
                 <button
                   onClick={() => setCurrentPage(p => Math.min(Math.ceil(carDataList.length / itemsPerPage), p + 1))}
                   disabled={currentPage >= Math.ceil(carDataList.length / itemsPerPage)}
                   className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Nākamā →
+                  Next →
                 </button>
               </div>
             </div>

@@ -47,7 +47,7 @@ public class CarsController : ControllerBase
                 return Unauthorized(new GetUserCarsResponse
                 {
                     Success = false,
-                    Message = "Nederīgs autentifikācijas tokens"
+                    Message = "Invalid authentication token"
                 });
             }
 
@@ -56,7 +56,7 @@ public class CarsController : ControllerBase
             return Ok(new GetUserCarsResponse
             {
                 Success = true,
-                Message = "Mašīnas iegūtas veiksmīgi",
+                Message = "Cars retrieved successfully",
                 Cars = cars
             });
         }
@@ -66,7 +66,7 @@ public class CarsController : ControllerBase
             return StatusCode(500, new GetUserCarsResponse
             {
                 Success = false,
-                Message = "Servera kļūda"
+                Message = "Server error"
             });
         }
     }
@@ -83,7 +83,7 @@ public class CarsController : ControllerBase
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized(new { success = false, message = "Nederīgs autentifikācijas tokens" });
+                return Unauthorized(new { success = false, message = "Invalid authentication token" });
             }
 
             // Check if user has access to this car
@@ -97,7 +97,7 @@ public class CarsController : ControllerBase
 
             if (car == null)
             {
-                return NotFound(new { success = false, message = "Mašīna nav atrasta" });
+                return NotFound(new { success = false, message = "Car not found" });
             }
 
             return Ok(new { success = true, car });
@@ -105,7 +105,7 @@ public class CarsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching car {CarId}", carId);
-            return StatusCode(500, new { success = false, message = "Servera kļūda" });
+            return StatusCode(500, new { success = false, message = "Server error" });
         }
     }
 
@@ -124,7 +124,7 @@ public class CarsController : ControllerBase
                 return Unauthorized(new GetCarDataResponse
                 {
                     Success = false,
-                    Message = "Nederīgs autentifikācijas tokens"
+                    Message = "Invalid authentication token"
                 });
             }
 
@@ -140,7 +140,7 @@ public class CarsController : ControllerBase
             return Ok(new GetCarDataResponse
             {
                 Success = true,
-                Message = "Dati iegūti veiksmīgi",
+                Message = "Data retrieved successfully",
                 Data = carData
             });
         }
@@ -150,7 +150,7 @@ public class CarsController : ControllerBase
             return StatusCode(500, new GetCarDataResponse
             {
                 Success = false,
-                Message = "Servera kļūda"
+                Message = "Server error"
             });
         }
     }
@@ -170,7 +170,7 @@ public class CarsController : ControllerBase
                 return Unauthorized(new CreateCarResponse
                 {
                     Success = false,
-                    Message = "Nederīgs autentifikācijas tokens"
+                    Message = "Invalid authentication token"
                 });
             }
 
@@ -179,7 +179,7 @@ public class CarsController : ControllerBase
             return Ok(new CreateCarResponse
             {
                 Success = true,
-                Message = "Mašīna izveidota veiksmīgi",
+                Message = "Car created successfully",
                 CarId = carId
             });
         }
@@ -188,7 +188,7 @@ public class CarsController : ControllerBase
             _logger.LogError(ex, "Error creating car");
             
             // Check for specific database constraint violations
-            string errorMessage = "Servera kļūda";
+            string errorMessage = "Server error";
             
             // Get the full exception message including inner exceptions
             string fullMessage = ex.ToString();
@@ -201,30 +201,30 @@ public class CarsController : ControllerBase
                 fullMessage.ToLower().Contains("index"))
             {
                 // Default constraint violation message
-                errorMessage = "Šie dati jau tiek izmantoti citai mašīnai";
+                errorMessage = "This data is already used by another car";
                 
                 // Check for specific constraint keys to identify the exact field
                 if (fullMessage.Contains("'CarTable.VIN'") || fullMessage.Contains("key 'VIN'"))
                 {
-                    errorMessage = "Šis VIN kods jau tiek izmantots citai mašīnai";
+                    errorMessage = "This VIN code is already used by another car";
                 }
                 else if (fullMessage.Contains("'CarTable.LicensePlate'") || fullMessage.Contains("key 'LicensePlate'"))
                 {
-                    errorMessage = "Šī numurzīme jau tiek izmantota citai mašīnai";
+                    errorMessage = "This license plate is already used by another car";
                 }
                 // Fallback to checking field names in the exception message
                 else if (fullMessage.ToLower().Contains("vin") && !fullMessage.ToLower().Contains("licenseplate"))
                 {
-                    errorMessage = "Šis VIN kods jau tiek izmantots citai mašīnai";
+                    errorMessage = "This VIN code is already used by another car";
                 }
                 else if (fullMessage.ToLower().Contains("licenseplate") || fullMessage.ToLower().Contains("license"))
                 {
-                    errorMessage = "Šī numurzīme jau tiek izmantota citai mašīnai";
+                    errorMessage = "This license plate is already used by another car";
                 }
             }
             else if (fullMessage.Contains("validation") || fullMessage.Contains("invalid"))
             {
-                errorMessage = "Nepareizi ievadīti dati";
+                errorMessage = "Invalid input data";
             }
             
             _logger.LogInformation("Returning error message: {ErrorMessage} for exception: {Exception}", errorMessage, fullMessage);
@@ -252,7 +252,7 @@ public class CarsController : ControllerBase
                 return Unauthorized(new UpdateCarResponse
                 {
                     Success = false,
-                    Message = "Nederīgs autentifikācijas tokens"
+                    Message = "Invalid authentication token"
                 });
             }
 
@@ -270,14 +270,14 @@ public class CarsController : ControllerBase
                 return NotFound(new UpdateCarResponse
                 {
                     Success = false,
-                    Message = "Mašīna nav atrasta"
+                    Message = "Car not found"
                 });
             }
 
             return Ok(new UpdateCarResponse
             {
                 Success = true,
-                Message = "Mašīna atjaunināta veiksmīgi"
+                Message = "Car updated successfully"
             });
         }
         catch (Exception ex)
@@ -285,7 +285,7 @@ public class CarsController : ControllerBase
             _logger.LogError(ex, "Error updating car {CarId}", carId);
             
             // Check for specific database constraint violations
-            string errorMessage = "Servera kļūda";
+            string errorMessage = "Server error";
             
             // Get the full exception message including inner exceptions
             string fullMessage = ex.ToString();
@@ -298,30 +298,30 @@ public class CarsController : ControllerBase
                 fullMessage.ToLower().Contains("index"))
             {
                 // Default constraint violation message
-                errorMessage = "Šie dati jau tiek izmantoti citai mašīnai";
+                errorMessage = "This data is already used by another car";
                 
                 // Check for specific constraint keys to identify the exact field
                 if (fullMessage.Contains("'CarTable.VIN'") || fullMessage.Contains("key 'VIN'"))
                 {
-                    errorMessage = "Šis VIN kods jau tiek izmantots citai mašīnai";
+                    errorMessage = "This VIN code is already used by another car";
                 }
                 else if (fullMessage.Contains("'CarTable.LicensePlate'") || fullMessage.Contains("key 'LicensePlate'"))
                 {
-                    errorMessage = "Šī numurzīme jau tiek izmantota citai mašīnai";
+                    errorMessage = "This license plate is already used by another car";
                 }
                 // Fallback to checking field names in the exception message
                 else if (fullMessage.ToLower().Contains("vin") && !fullMessage.ToLower().Contains("licenseplate"))
                 {
-                    errorMessage = "Šis VIN kods jau tiek izmantots citai mašīnai";
+                    errorMessage = "This VIN code is already used by another car";
                 }
                 else if (fullMessage.ToLower().Contains("licenseplate") || fullMessage.ToLower().Contains("license"))
                 {
-                    errorMessage = "Šī numurzīme jau tiek izmantota citai mašīnai";
+                    errorMessage = "This license plate is already used by another car";
                 }
             }
             else if (fullMessage.Contains("validation") || fullMessage.Contains("invalid"))
             {
-                errorMessage = "Nepareizi ievadīti dati";
+                errorMessage = "Invalid input data";
             }
             
             return StatusCode(500, new UpdateCarResponse
@@ -396,7 +396,7 @@ public class CarsController : ControllerBase
                 return Unauthorized(new TransferOwnershipResponse
                 {
                     Success = false,
-                    Message = "Nederīgs autentifikācijas tokens"
+                    Message = "Invalid authentication token"
                 });
             }
 
@@ -406,7 +406,7 @@ public class CarsController : ControllerBase
                 return BadRequest(new TransferOwnershipResponse
                 {
                     Success = false,
-                    Message = "Jaunā īpašnieka e-pasta adrese ir obligāta"
+                    Message = "New owner's email address is required"
                 });
             }
 
@@ -424,7 +424,7 @@ public class CarsController : ControllerBase
                 return NotFound(new TransferOwnershipResponse
                 {
                     Success = false,
-                    Message = "Lietotājs ar šādu e-pasta adresi neeksistē"
+                    Message = "User with this email address does not exist"
                 });
             }
 
@@ -434,7 +434,7 @@ public class CarsController : ControllerBase
                 return BadRequest(new TransferOwnershipResponse
                 {
                     Success = false,
-                    Message = "Nevar nodot īpašumtiesības sev"
+                    Message = "Cannot transfer ownership to yourself"
                 });
             }
 
@@ -446,14 +446,14 @@ public class CarsController : ControllerBase
                 return StatusCode(500, new TransferOwnershipResponse
                 {
                     Success = false,
-                    Message = "Neizdevās nodot īpašumtiesības"
+                    Message = "Failed to transfer ownership"
                 });
             }
 
             return Ok(new TransferOwnershipResponse
             {
                 Success = true,
-                Message = $"Īpašumtiesības veiksmīgi nodotas lietotājam {request.NewOwnerEmail}"
+                Message = $"Ownership successfully transferred to user {request.NewOwnerEmail}"
             });
         }
         catch (Exception ex)
@@ -463,7 +463,7 @@ public class CarsController : ControllerBase
             return StatusCode(500, new TransferOwnershipResponse
             {
                 Success = false,
-                Message = "Servera kļūda. Lūdzu mēģiniet vēlāk"
+                Message = "Server error. Please try again later"
             });
         }
     }
@@ -483,7 +483,7 @@ public class CarsController : ControllerBase
                 return Unauthorized(new ChangeUserRoleResponse
                 {
                     Success = false,
-                    Message = "Nederīgs autentifikācijas tokens"
+                    Message = "Invalid authentication token"
                 });
             }
 
@@ -493,7 +493,7 @@ public class CarsController : ControllerBase
                 return BadRequest(new ChangeUserRoleResponse
                 {
                     Success = false,
-                    Message = "Nepareizi ievadīti dati"
+                    Message = "Invalid input data"
                 });
             }
 
@@ -505,14 +505,14 @@ public class CarsController : ControllerBase
                 return BadRequest(new ChangeUserRoleResponse
                 {
                     Success = false,
-                    Message = "Neizdevās mainīt lietotāja lomu"
+                    Message = "Failed to change user role"
                 });
             }
 
             return Ok(new ChangeUserRoleResponse
             {
                 Success = true,
-                Message = $"Lietotāja loma veiksmīgi mainīta uz {request.NewRole}"
+                Message = $"User role successfully changed to {request.NewRole}"
             });
         }
         catch (Exception ex)
@@ -522,7 +522,7 @@ public class CarsController : ControllerBase
             return StatusCode(500, new ChangeUserRoleResponse
             {
                 Success = false,
-                Message = "Servera kļūda. Lūdzu mēģiniet vēlāk"
+                Message = "Server error. Please try again later"
             });
         }
     }
@@ -542,7 +542,7 @@ public class CarsController : ControllerBase
                 return Unauthorized(new AssignViewerResponse
                 {
                     Success = false,
-                    Message = "Nederīgs autentifikācijas tokens"
+                    Message = "Invalid authentication token"
                 });
             }
 
@@ -552,7 +552,7 @@ public class CarsController : ControllerBase
                 return BadRequest(new AssignViewerResponse
                 {
                     Success = false,
-                    Message = "Skatītāja e-pasta adrese ir obligāta"
+                    Message = "Viewer's email address is required"
                 });
             }
 
@@ -564,14 +564,14 @@ public class CarsController : ControllerBase
                 return BadRequest(new AssignViewerResponse
                 {
                     Success = false,
-                    Message = "Neizdevās piešķirt skatītāja lomu"
+                    Message = "Failed to assign viewer role"
                 });
             }
 
             return Ok(new AssignViewerResponse
             {
                 Success = true,
-                Message = $"Skatītāja loma veiksmīgi piešķirta lietotājam {request.ViewerEmail}"
+                Message = $"Viewer role successfully assigned to user {request.ViewerEmail}"
             });
         }
         catch (Exception ex)
@@ -581,7 +581,7 @@ public class CarsController : ControllerBase
             return StatusCode(500, new AssignViewerResponse
             {
                 Success = false,
-                Message = "Servera kļūda. Lūdzu mēģiniet vēlāk"
+                Message = "Server error. Please try again later"
             });
         }
     }
@@ -598,7 +598,7 @@ public class CarsController : ControllerBase
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized(new { success = false, message = "Nederīgs autentifikācijas tokens" });
+                return Unauthorized(new { success = false, message = "Invalid authentication token" });
             }
 
             // Remove user access
@@ -606,16 +606,16 @@ public class CarsController : ControllerBase
             
             if (!success)
             {
-                return BadRequest(new { success = false, message = "Neizdevās noņemt lietotāja piekļuvi" });
+                return BadRequest(new { success = false, message = "Failed to remove user access" });
             }
 
-            return Ok(new { success = true, message = "Lietotāja piekļuve veiksmīgi noņemta" });
+            return Ok(new { success = true, message = "User access successfully removed" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error removing user access for car {CarId}", carId);
             
-            return StatusCode(500, new { success = false, message = "Servera kļūda. Lūdzu mēģiniet vēlāk" });
+            return StatusCode(500, new { success = false, message = "Server error. Please try again later" });
         }
     }
 
@@ -631,7 +631,7 @@ public class CarsController : ControllerBase
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized(new { success = false, message = "Nederīgs autentifikācijas tokens" });
+                return Unauthorized(new { success = false, message = "Invalid authentication token" });
             }
 
 // Check if user is OWNER of this car
@@ -640,7 +640,7 @@ public class CarsController : ControllerBase
 
         if (userCarRelation == null || userCarRelation.RoleCode != "OWNER")
         {
-            return StatusCode(403, new { success = false, message = "Tikai īpašnieks var dzēst mašīnu" });
+            return StatusCode(403, new { success = false, message = "Only owner can delete car" });
             }
 
             // Delete all related data
@@ -671,12 +671,12 @@ public class CarsController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { success = true, message = "Mašīna un visi saistītie dati dzēsti veiksmīgi" });
+            return Ok(new { success = true, message = "Car and all related data deleted successfully" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting car {CarId}", carId);
-            return StatusCode(500, new { success = false, message = "Servera kļūda dzēšot mašīnu" });
+            return StatusCode(500, new { success = false, message = "Server error deleting car" });
         }
     }
 }

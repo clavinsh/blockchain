@@ -20,16 +20,16 @@ export default function LoginPage() {
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = "E-pasts ir obligāts";
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Nepareizs e-pasta formāts";
+      newErrors.email = "Invalid email format";
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = "Parole ir obligāta";
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = "Parolei jābūt vismaz 6 simboli garā";
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     setErrors(newErrors);
@@ -77,14 +77,14 @@ export default function LoginPage() {
       } else {
         setErrors({
           email: "",
-          password: response.message || "Nepareizi pierakstīšanās dati"
+          password: response.message || "Incorrect login credentials"
         });
       }
     } catch (error) {
       console.error('Login error:', error);
       setErrors({
         email: "",
-        password: "Savienojuma kļūda. Lūdzu, mēģiniet vēlreiz."
+        password: "Connection error. Please try again."
       });
     } finally {
       setIsLoading(false);
@@ -95,10 +95,10 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-            Pierakstīties sistēmā
+            Log In
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Ievadiet savus pierakstīšanās datus
+            Enter your login credentials
           </p>
         </div>
 
@@ -106,7 +106,7 @@ export default function LoginPage() {
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                E-pasts
+                Email
               </label>
               <input
                 id="email"
@@ -119,7 +119,7 @@ export default function LoginPage() {
                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                   } placeholder-gray-500 text-gray-900`}
-                placeholder="jūsu.epasts@example.com"
+                placeholder="your.email@example.com"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
@@ -128,7 +128,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Parole
+                Password
               </label>
               <input
                 id="password"
@@ -141,7 +141,7 @@ export default function LoginPage() {
                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                   } placeholder-gray-500 text-gray-900`}
-                placeholder="Ievadiet paroli"
+                placeholder="Enter password"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
@@ -158,17 +158,17 @@ export default function LoginPage() {
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Pierakstās...
+                  Logging in...
                 </div>
               ) : (
-                "Pierakstīties"
+                "Log In"
               )}
             </Button>
           </div>
 
           <div className="text-center">
             <Link to="/register" className="text-sm text-blue-600 hover:text-blue-500">
-              Nav konta? Reģistrēties šeit
+              Don't have an account? Register here
             </Link>
           </div>
         </form>

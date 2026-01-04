@@ -12,11 +12,11 @@ export default function InvitationsPage() {
   const getRoleLabel = (roleCode: string) => {
     switch (roleCode) {
       case 'OWNER':
-        return 'Īpašnieks'
+        return 'Owner'
       case 'DRIVER':
-        return 'Vadītājs'
+        return 'Driver'
       case 'VIEWER':
-        return 'Skatītājs'
+        return 'Viewer'
       default:
         return roleCode
     }
@@ -25,13 +25,13 @@ export default function InvitationsPage() {
   const getRoleDescription = (roleCode: string) => {
     switch (roleCode) {
       case 'OWNER':
-        return 'Kā īpašnieks jūs varēsit pilnībā pārvaldīt šo mašīnu un uzaicināt citus lietotājus.'
+        return 'As an owner, you will be able to fully manage this car and invite other users.'
       case 'DRIVER':
-        return 'Kā vadītājs jūs varēsit skatīt mašīnas datus un informāciju.'
+        return 'As a driver, you will be able to view car data and information.'
       case 'VIEWER':
-        return 'Kā skatītājs jūs varēsit skatīt mašīnas datus un statistiku, bet ne braukšanas atskaites.'
+        return 'As a viewer, you will be able to view car data and statistics, but not driving reports.'
       default:
-        return 'Jums būs piekļuve šai mašīnai.'
+        return 'You will have access to this car.'
     }
   }
 
@@ -80,27 +80,27 @@ export default function InvitationsPage() {
     try {
       const response = await inviteApi.acceptInvite(inviteId)
       if (response.success) {
-        alert('Uzaicinājums pieņemts! Tagad jums ir piekļuve šai mašīnai.')
+        alert('Invitation accepted! You now have access to this car.')
         loadReceivedInvites()
         // Refresh the cars list
         await refreshCarList()
       }
     } catch (err: any) {
-      alert(err.message || 'Neizdevās pieņemt uzaicinājumu')
+      alert(err.message || 'Failed to accept invitation')
     }
   }
 
   const handleDecline = async (inviteId: number) => {
-    if (!confirm('Vai tiešām vēlaties noraidīt šo uzaicinājumu?')) return
+    if (!confirm('Are you sure you want to decline this invitation?')) return
 
     try {
       const response = await inviteApi.declineInvite(inviteId)
       if (response.success) {
-        alert('Uzaicinājums noraidīts')
+        alert('Invitation declined')
         loadReceivedInvites()
       }
     } catch (err: any) {
-      alert(err.message || 'Neizdevās noraidīt uzaicinājumu')
+      alert(err.message || 'Failed to decline invitation')
     }
   }
 
@@ -109,21 +109,21 @@ export default function InvitationsPage() {
       <main className="p-6">
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Mani uzaicinājumi</h2>
+            <h2 className="text-lg font-semibold text-gray-900">My Invitations</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Uzaicinājumi no citiem lietotājiem piekļuvei viņu mašīnām
+              Invitations from other users to access their cars
             </p>
           </div>
 
           <div className="p-6">
             {isLoading ? (
               <div className="text-center py-8 text-gray-500">
-                <p>Ielādē uzaicinājumus...</p>
+                <p>Loading invitations...</p>
               </div>
             ) : receivedInvites.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                <p>Jums nav jaunu uzaicinājumu.</p>
-                <p className="text-sm mt-2">Kad kāds jūs uzaicinās, uzaicinājums parādīsies šeit.</p>
+                <p>You have no new invitations.</p>
+                <p className="text-sm mt-2">When someone invites you, the invitation will appear here.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -139,19 +139,19 @@ export default function InvitationsPage() {
                             invite.inviteStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {invite.inviteStatus === 'PENDING' ? 'Gaida' : invite.inviteStatus}
+                            {invite.inviteStatus === 'PENDING' ? 'Pending' : invite.inviteStatus}
                           </span>
                         </div>
 
                         <div className="space-y-1 text-sm text-gray-600">
                           <p>
-                            <span className="font-medium">No:</span> {invite.inviterUsername} ({invite.inviterEmail})
+                            <span className="font-medium">From:</span> {invite.inviterUsername} ({invite.inviterEmail})
                           </p>
                           <p>
-                            <span className="font-medium">Loma:</span> {getRoleLabel(invite.roleCode)}
+                            <span className="font-medium">Role:</span> {getRoleLabel(invite.roleCode)}
                           </p>
                           <p>
-                            <span className="font-medium">Nosūtīts:</span> {invite.createdAt ? formatLocalDateTime(invite.createdAt) : 'Nav zināms'}
+                            <span className="font-medium">Sent:</span> {invite.createdAt ? formatLocalDateTime(invite.createdAt) : 'Unknown'}
                           </p>
                         </div>
 
@@ -169,14 +169,14 @@ export default function InvitationsPage() {
                           onClick={() => handleAccept(invite.inviteId)}
                           className="flex-1"
                         >
-                          Pieņemt
+                          Accept
                         </Button>
                         <Button
                           onClick={() => handleDecline(invite.inviteId)}
                           variant="outline"
                           className="flex-1"
                         >
-                          Noraidīt
+                          Decline
                         </Button>
                       </div>
                     )}

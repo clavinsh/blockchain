@@ -96,8 +96,8 @@ export default function AnalyzedDataPage() {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Izvēlieties auto</h2>
-          <p className="text-gray-600">Lūdzu, izvēlieties auto no augšējās izvēlnes, lai redzētu tā analizētos datus.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Select a car</h2>
+          <p className="text-gray-600">Please select a car from the top menu to see its analyzed data.</p>
         </div>
       </div>
     )
@@ -146,21 +146,21 @@ export default function AnalyzedDataPage() {
 
   const translateWearLevel = (level: string) => {
     const translations: Record<string, string> = {
-      'Low': 'Zems',
-      'Moderate': 'Vidējs',
-      'High': 'Augsts',
-      'Severe': 'Kritisks'
+      'Low': 'Low',
+      'Moderate': 'Moderate',
+      'High': 'High',
+      'Severe': 'Severe'
     }
     return translations[level] || level
   }
 
   const translateRiskLevel = (level: string) => {
     const translations: Record<string, string> = {
-      'VeryLow': 'Ļoti zems',
-      'Low': 'Zems',
-      'Moderate': 'Vidējs',
-      'High': 'Augsts',
-      'VeryHigh': 'Ļoti augsts'
+      'VeryLow': 'Very Low',
+      'Low': 'Low',
+      'Moderate': 'Moderate',
+      'High': 'High',
+      'VeryHigh': 'Very High'
     }
     return translations[level] || level
   }
@@ -168,11 +168,11 @@ export default function AnalyzedDataPage() {
   const getRoleLabel = (roleCode: string) => {
     switch (roleCode) {
       case 'OWNER':
-        return 'Īpašnieks'
+        return 'Owner'
       case 'DRIVER':
-        return 'Vadītājs'
+        return 'Driver'
       case 'VIEWER':
-        return 'Skatītājs'
+        return 'Viewer'
       default:
         return roleCode
     }
@@ -184,17 +184,17 @@ export default function AnalyzedDataPage() {
         {/* Car Info Header */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">
-            Blockchain telemetrija: {selectedCar.brand} {selectedCar.model}
+            Blockchain Telemetry: {selectedCar.brand} {selectedCar.model}
           </h2>
           <p className="text-gray-600">
-            Numurzīme: {selectedCar.licensePlate} | Loma: {getRoleLabel(userRole)}
+            License Plate: {selectedCar.licensePlate} | Role: {getRoleLabel(userRole)}
           </p>
         </div>
 
         {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">Kļūda: {error}</p>
+            <p className="text-red-800">Error: {error}</p>
           </div>
         )}
 
@@ -209,7 +209,7 @@ export default function AnalyzedDataPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
-                Braukšanas atskaite
+                Driving Report
               </button>
             )}
             <button
@@ -219,7 +219,7 @@ export default function AnalyzedDataPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
-              Apdrošināšanas atskaite
+              Insurance Report
             </button>
             <button
               onClick={() => setActiveTab('reseller')}
@@ -228,7 +228,7 @@ export default function AnalyzedDataPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
-              Pārdevēja atskaite
+              Reseller Report
             </button>
             <button
               onClick={() => setActiveTab('system')}
@@ -237,7 +237,7 @@ export default function AnalyzedDataPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
-              Sistēmas informācija ({blockchainData.length})
+              System Information ({blockchainData.length})
             </button>
             <button
               onClick={() => setActiveTab('map')}
@@ -246,24 +246,24 @@ export default function AnalyzedDataPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
-              Maršruta karte
+              Route Map
             </button>
           </nav>
         </div>
 
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">Ielādē datus...</p>
+            <p className="text-gray-600">Loading data...</p>
           </div>
         ) : (
           <>
             {/* Driving Report Tab */}
             {activeTab === 'driving' && !isViewer && !drivingReport && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-yellow-900 mb-2">⚠️ Nav pieejamu datu</h3>
+                <h3 className="text-lg font-semibold text-yellow-900 mb-2">⚠️ No data available</h3>
                 <p className="text-sm text-yellow-800">
-                  Šim auto nav pietiekami daudz telemetrijas datu, lai ģenerētu braukšanas atskaiti.
-                  Pievienojiet telemetrijas datus, lai redzētu detalizētu analīzi.
+                  This car does not have enough telemetry data to generate a driving report.
+                  Add telemetry data to see detailed analysis.
                 </p>
               </div>
             )}
@@ -272,30 +272,30 @@ export default function AnalyzedDataPage() {
                 {/* Export Button */}
                 <div className="flex justify-end mb-4">
                   <button
-                    onClick={() => exportToJSON(drivingReport, 'braukšanas_atskaite')}
+                    onClick={() => exportToJSON(drivingReport, 'driving_report')}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Eksportēt JSON
+                    Export JSON
                   </button>
                 </div>
                 {/* Overview Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2">Braukšanas rezultāts</h3>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Driving Score</h3>
                     <p className="text-3xl font-bold text-blue-600">{drivingReport.overallDrivingScore.toFixed(1)}</p>
-                    <p className="text-xs text-gray-500 mt-1">no 100</p>
+                    <p className="text-xs text-gray-500 mt-1">out of 100</p>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2">Kopējais attālums</h3>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Total Distance</h3>
                     <p className="text-2xl font-bold text-gray-900">
                       {drivingReport.basicStatistics.totalDistance.toFixed(1)} km
                     </p>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2">Vidējais ātrums</h3>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Average Speed</h3>
                     <p className="text-2xl font-bold text-gray-900">
                       {drivingReport.basicStatistics.averageSpeed.toFixed(1)} km/h
                     </p>
@@ -304,16 +304,16 @@ export default function AnalyzedDataPage() {
 
                 {/* Risk Assessment */}
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Riska novērtējums</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Assessment</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">Riska līmenis</p>
+                      <p className="text-sm text-gray-600">Risk Level</p>
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getRiskLevelColor(drivingReport.riskAssessment.overallRiskLevel)}`}>
                         {translateRiskLevel(drivingReport.riskAssessment.overallRiskLevel)}
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Apdrošināšanas koeficients</p>
+                      <p className="text-sm text-gray-600">Insurance Coefficient</p>
                       <p className="text-lg font-semibold text-gray-900">
                         {drivingReport.riskAssessment.insurancePremiumMultiplier.toFixed(2)}x
                       </p>
@@ -323,22 +323,22 @@ export default function AnalyzedDataPage() {
 
                 {/* Vehicle Wear */}
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Transportlīdzekļa nolietojums</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Wear</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">Bremzes</p>
+                      <p className="text-sm text-gray-600">Brakes</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(drivingReport.vehicleWearEstimate.brakeWearLevel)}`}>
                         {translateWearLevel(drivingReport.vehicleWearEstimate.brakeWearLevel)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Motors</p>
+                      <p className="text-sm text-gray-600">Engine</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(drivingReport.vehicleWearEstimate.engineWearLevel)}`}>
                         {translateWearLevel(drivingReport.vehicleWearEstimate.engineWearLevel)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Riepas</p>
+                      <p className="text-sm text-gray-600">Tires</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(drivingReport.vehicleWearEstimate.tireWearLevel)}`}>
                         {translateWearLevel(drivingReport.vehicleWearEstimate.tireWearLevel)}
                       </p>
@@ -349,7 +349,7 @@ export default function AnalyzedDataPage() {
                 {/* Recommendations */}
                 {drivingReport.recommendations.length > 0 && (
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Ieteikumi</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommendations</h3>
                     <ul className="list-disc list-inside space-y-2">
                       {drivingReport.recommendations.map((rec, index) => (
                         <li key={index} className="text-sm text-gray-700">{rec}</li>
@@ -363,9 +363,9 @@ export default function AnalyzedDataPage() {
             {/* Insurance Summary Tab */}
             {activeTab === 'insurance' && !insuranceSummary && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-yellow-900 mb-2">⚠️ Nav pieejamu datu</h3>
+                <h3 className="text-lg font-semibold text-yellow-900 mb-2">⚠️ No data available</h3>
                 <p className="text-sm text-yellow-800">
-                  Nav pietiekami daudz telemetrijas datu, lai ģenerētu apdrošināšanas kopsavilkumu.
+                  Not enough telemetry data to generate an insurance summary.
                 </p>
               </div>
             )}            {activeTab === 'insurance' && insuranceSummary && (
@@ -373,26 +373,26 @@ export default function AnalyzedDataPage() {
                 {/* Export Button */}
                 <div className="flex justify-end mb-4">
                   <button
-                    onClick={() => exportToJSON(insuranceSummary, 'apdrošināšanas_atskaite')}
+                    onClick={() => exportToJSON(insuranceSummary, 'insurance_report')}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Eksportēt JSON
+                    Export JSON
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2">Braukšanas rezultāts</h3>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Driving Score</h3>
                     <p className="text-3xl font-bold text-blue-600">{insuranceSummary.drivingScore.toFixed(1)}</p>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2">Drošības incidenti</h3>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Safety Incidents</h3>
                     <p className="text-3xl font-bold text-orange-600">{insuranceSummary.safetyIncidents}</p>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2">Prēmijas koeficients</h3>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Premium Coefficient</h3>
                     <p className="text-3xl font-bold text-gray-900">
                       {insuranceSummary.recommendedPremiumMultiplier.toFixed(2)}x
                     </p>
@@ -400,20 +400,20 @@ export default function AnalyzedDataPage() {
                 </div>
 
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalizēta informācija</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Detailed Information</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Riska līmenis</span>
+                      <span className="text-sm text-gray-600">Risk Level</span>
                       <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getRiskLevelColor(insuranceSummary.riskLevel)}`}>
                         {translateRiskLevel(insuranceSummary.riskLevel)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Kopējais attālums</span>
+                      <span className="text-sm text-gray-600">Total Distance</span>
                       <span className="text-sm font-semibold text-gray-900">{insuranceSummary.totalDistance.toFixed(1)} km</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Vienmērīga braukšana</span>
+                      <span className="text-sm text-gray-600">Smooth Driving</span>
                       <span className="text-sm font-semibold text-gray-900">{insuranceSummary.smoothDrivingPercentage.toFixed(1)}%</span>
                     </div>
                   </div>
@@ -424,9 +424,9 @@ export default function AnalyzedDataPage() {
             {/* Reseller Summary Tab */}
             {activeTab === 'reseller' && !resellerSummary && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-yellow-900 mb-2">⚠️ Nav pieejamu datu</h3>
+                <h3 className="text-lg font-semibold text-yellow-900 mb-2">⚠️ No data available</h3>
                 <p className="text-sm text-yellow-800">
-                  Nav pietiekami daudz telemetrijas datu, lai ģenerētu pārdevēja kopsavilkumu.
+                  Not enough telemetry data to generate a reseller summary.
                 </p>
               </div>
             )}
@@ -435,47 +435,47 @@ export default function AnalyzedDataPage() {
                 {/* Export Button */}
                 <div className="flex justify-end mb-4">
                   <button
-                    onClick={() => exportToJSON(resellerSummary, 'pārdevēja_atskaite')}
+                    onClick={() => exportToJSON(resellerSummary, 'reseller_report')}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Eksportēt JSON
+                    Export JSON
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2">Braukšanas rezultāts</h3>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Driving Score</h3>
                     <p className="text-3xl font-bold text-blue-600">{resellerSummary.drivingScore.toFixed(1)}</p>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2">Stāvokļa novērtējums</h3>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Condition Rating</h3>
                     <p className="text-2xl font-bold text-gray-900">{resellerSummary.vehicleConditionRating}</p>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-2">Apkopes izmaksas</h3>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Maintenance Costs</h3>
                     <p className="text-2xl font-bold text-gray-900">€{resellerSummary.estimatedMaintenanceCost.toFixed(2)}</p>
                   </div>
                 </div>
 
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Komponenšu stāvoklis</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Component Condition</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">Bremzes</p>
+                      <p className="text-sm text-gray-600">Brakes</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(resellerSummary.brakeCondition)}`}>
                         {translateWearLevel(resellerSummary.brakeCondition)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Motors</p>
+                      <p className="text-sm text-gray-600">Engine</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(resellerSummary.engineCondition)}`}>
                         {translateWearLevel(resellerSummary.engineCondition)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Riepas</p>
+                      <p className="text-sm text-gray-600">Tires</p>
                       <p className={`text-lg font-semibold ${getWearLevelColor(resellerSummary.tireCondition)}`}>
                         {translateWearLevel(resellerSummary.tireCondition)}
                       </p>
@@ -485,7 +485,7 @@ export default function AnalyzedDataPage() {
 
                 {resellerSummary.recommendedActions.length > 0 && (
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Ieteiktās darbības</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommended Actions</h3>
                     <ul className="list-disc list-inside space-y-2">
                       {resellerSummary.recommendedActions.map((action, index) => (
                         <li key={index} className="text-sm text-gray-700">{action}</li>
@@ -502,49 +502,49 @@ export default function AnalyzedDataPage() {
                 {/* Export Button */}
                 <div className="flex justify-end mb-4">
                   <button
-                    onClick={() => exportToJSON(blockchainData, 'sistēmas_telemetrija')}
+                    onClick={() => exportToJSON(blockchainData, 'system_telemetry')}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Eksportēt telemetriju JSON
+                    Export Telemetry JSON
                   </button>
                 </div>
                 {/* System Status */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-blue-900 mb-4">Sistēmas stāvoklis</h3>
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">System Status</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">Blockchain tīkls</span>
+                        <span className="text-sm font-medium text-gray-600">Blockchain Network</span>
                         <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          ✓ Aktīvs
+                          ✓ Active
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-2">Hyperledger Fabric 2.5</p>
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">Datu bāze</span>
+                        <span className="text-sm font-medium text-gray-600">Database</span>
                         <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          ✓ Savienots
+                          ✓ Connected
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-2">MySQL 8.0</p>
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">Telemetrijas ieraksti</span>
+                        <span className="text-sm font-medium text-gray-600">Telemetry Records</span>
                         <span className="text-lg font-bold text-blue-600">{blockchainData.length}</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">Saglabāti kešatmiņā</p>
+                      <p className="text-xs text-gray-500 mt-2">Cached</p>
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-600">API Gateway</span>
                         <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          ✓ Gatavs
+                          ✓ Ready
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-2">Port 3001</p>
@@ -554,22 +554,22 @@ export default function AnalyzedDataPage() {
 
                 {/* Blockchain Architecture */}
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Blockchain arhitektūra</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Blockchain Architecture</h3>
                   <div className="space-y-3 text-sm text-gray-700">
                     <div className="flex items-start">
-                      <span className="font-semibold min-w-32">Kanāls:</span>
+                      <span className="font-semibold min-w-32">Channel:</span>
                       <span>mychannel</span>
                     </div>
                     <div className="flex items-start">
                       <span className="font-semibold min-w-32">Chaincode:</span>
-                      <span>vehicle (versija 1.0)</span>
+                      <span>vehicle (version 1.0)</span>
                     </div>
                     <div className="flex items-start">
-                      <span className="font-semibold min-w-32">Konsensus:</span>
+                      <span className="font-semibold min-w-32">Consensus:</span>
                       <span>Raft (Orderer)</span>
                     </div>
                     <div className="flex items-start">
-                      <span className="font-semibold min-w-32">Valsts DB:</span>
+                      <span className="font-semibold min-w-32">State DB:</span>
                       <span>CouchDB 3.3</span>
                     </div>
                   </div>
@@ -577,42 +577,42 @@ export default function AnalyzedDataPage() {
 
                 {/* Available Functions */}
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Pieejamās funkcijas</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Functions</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">Transportlīdzekļu reģistrācija</h4>
-                      <p className="text-xs text-gray-600">Nemainīga reģistrācijas vēsture blockchain ledger'ī</p>
+                      <h4 className="font-semibold text-gray-900 mb-1">Vehicle Registration</h4>
+                      <p className="text-xs text-gray-600">Immutable registration history on blockchain ledger</p>
                     </div>
                     <div className="border-l-4 border-green-500 bg-green-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">Piekļuves kontrole</h4>
-                      <p className="text-xs text-gray-600">Decentralizēta lietotāju tiesību pārvaldība</p>
+                      <h4 className="font-semibold text-gray-900 mb-1">Access Control</h4>
+                      <p className="text-xs text-gray-600">Decentralized user rights management</p>
                     </div>
                     <div className="border-l-4 border-purple-500 bg-purple-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">Telemetrijas analīze</h4>
-                      <p className="text-xs text-gray-600">Braukšanas datu apstrāde un atskaišu ģenerēšana</p>
+                      <h4 className="font-semibold text-gray-900 mb-1">Telemetry Analysis</h4>
+                      <p className="text-xs text-gray-600">Driving data processing and report generation</p>
                     </div>
                     <div className="border-l-4 border-orange-500 bg-orange-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">Audita žurnāls</h4>
-                      <p className="text-xs text-gray-600">Pilnīga izmaiņu vēsture ar laika zīmogiem</p>
+                      <h4 className="font-semibold text-gray-900 mb-1">Audit Log</h4>
+                      <p className="text-xs text-gray-600">Complete change history with timestamps</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Data Storage Info */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Datu glabāšana</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Data Storage</h3>
                   <p className="text-sm text-gray-700 mb-3">
-                    Sistēma izmanto hibrīdu pieeju datu glabāšanai:
+                    The system uses a hybrid approach for data storage:
                   </p>
                   <ul className="space-y-2 text-sm text-gray-600">
                     <li className="flex items-start">
-                      <span><strong>Blockchain:</strong> Auto reģistrācijas metadati, īpašumtiesības, piekļuves tiesības</span>
+                      <span><strong>Blockchain:</strong> Car registration metadata, ownership, access rights</span>
                     </li>
                     <li className="flex items-start">
-                      <span><strong>MySQL:</strong> Telemetrijas dati kešatmiņā ātrākai piekļuvei un analīzei</span>
+                      <span><strong>MySQL:</strong> Telemetry data cached for faster access and analysis</span>
                     </li>
                     <li className="flex items-start">
-                      <span><strong>Priekšrocības:</strong> Blockchain drošība + SQL vaicājumu ātrums</span>
+                      <span><strong>Benefits:</strong> Blockchain security + SQL query speed</span>
                     </li>
                   </ul>
                 </div>

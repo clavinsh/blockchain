@@ -39,7 +39,7 @@ export const authApi = {
     });
 
     if (!response.ok) {
-      let errorMessage = 'Neizdevās pieteikties';
+      let errorMessage = 'Failed to log in';
       
       try {
         const error = await response.json();
@@ -48,11 +48,11 @@ export const authApi = {
         }
       } catch {
         if (response.status === 401) {
-          errorMessage = 'Nepareiza e-pasta adrese vai parole';
+          errorMessage = 'Invalid email or password';
         } else if (response.status === 400) {
-          errorMessage = 'Nepareizi ievadīti dati';
+          errorMessage = 'Invalid input data';
         } else if (response.status >= 500) {
-          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+          errorMessage = 'Server error. Please try again later';
         } else {
           errorMessage = response.statusText || errorMessage;
         }
@@ -74,7 +74,7 @@ export const authApi = {
     });
 
     if (!response.ok) {
-      let errorMessage = 'Neizdevās reģistrēties';
+      let errorMessage = 'Failed to register';
       
       try {
         const error = await response.json();
@@ -83,11 +83,11 @@ export const authApi = {
         }
       } catch {
         if (response.status === 409) {
-          errorMessage = 'Lietotājs ar šādu e-pastu jau eksistē';
+          errorMessage = 'User with this email already exists';
         } else if (response.status === 400) {
-          errorMessage = 'Nepareizi ievadīti dati';
+          errorMessage = 'Invalid input data';
         } else if (response.status >= 500) {
-          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+          errorMessage = 'Server error. Please try again later';
         } else {
           errorMessage = response.statusText || errorMessage;
         }
@@ -184,7 +184,7 @@ export const carApi = {
           statusText: response.statusText,
           body: errorText
         });
-        throw new Error(`Neizdevās ielādēt mašīnu sarakstu: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to load car list: ${response.status} ${response.statusText}`);
       }
 
       return response.json();
@@ -210,7 +210,7 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Neizdevās ielādēt mašīnas lietotājus');
+      throw new Error('Failed to load car users');
     }
 
     const data = await response.json();
@@ -234,7 +234,7 @@ export const carApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Neizdevās noņemt lietotāja piekļuvi');
+      throw new Error(error.message || 'Failed to remove user access');
     }
   },
 
@@ -254,7 +254,7 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Neizdevās ielādēt mašīnas informāciju');
+      throw new Error('Failed to load car information');
     }
 
     return response.json();
@@ -276,7 +276,7 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Neizdevās ielādēt mašīnas datus');
+      throw new Error('Failed to load car data');
     }
 
     return response.json();
@@ -306,7 +306,7 @@ export const carApi = {
         url: response.url
       });
       
-      let errorMessage = 'Neizdevās izveidot mašīnu';
+      let errorMessage = 'Failed to create car';
       
       try {
         // Try to parse JSON response first
@@ -324,26 +324,26 @@ export const carApi = {
           
           // Handle specific database constraint errors
           if (errorText.includes('VIN') || errorText.includes('vin')) {
-            errorMessage = 'Šis VIN kods jau tiek izmantots citai mašīnai';
-          } else if (errorText.includes('LicensePlate') || errorText.includes('license') || errorText.includes('numurzīme')) {
-            errorMessage = 'Šī numurzīme jau tiek izmantota citai mašīnai';
+            errorMessage = 'This VIN code is already used by another car';
+          } else if (errorText.includes('LicensePlate') || errorText.includes('license')) {
+            errorMessage = 'This license plate is already used by another car';
           } else if (errorText.includes('duplicate') || errorText.includes('UNIQUE constraint')) {
-            errorMessage = 'Šie dati jau tiek izmantoti citai mašīnai';
+            errorMessage = 'This data is already used by another car';
           } else if (response.status === 400) {
-            errorMessage = 'Nepareizi ievadīti dati';
+            errorMessage = 'Invalid input data';
           } else if (response.status === 401) {
-            errorMessage = 'Nav autorizācijas';
+            errorMessage = 'No authorization';
           } else if (response.status === 403) {
-            errorMessage = 'Nav atļaujas veikt šo darbību';
+            errorMessage = 'No permission to perform this action';
           } else if (response.status >= 500) {
-            errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+            errorMessage = 'Server error. Please try again later';
           } else {
             errorMessage = response.statusText || errorMessage;
           }
         } catch (textError) {
           console.error('CreateCar Text Parse Failed:', textError);
           // Last fallback
-          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Nezināma kļūda'}`;
+          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Unknown error'}`;
         }
       }
       
@@ -378,7 +378,7 @@ export const carApi = {
         url: response.url
       });
       
-      let errorMessage = 'Neizdevās atjaunināt mašīnu';
+      let errorMessage = 'Failed to update car';
       
       try {
         // Try to parse JSON response first
@@ -396,26 +396,26 @@ export const carApi = {
           
           // Handle specific database constraint errors
           if (errorText.includes('VIN') || errorText.includes('vin')) {
-            errorMessage = 'Šis VIN kods jau tiek izmantots citai mašīnai';
-          } else if (errorText.includes('LicensePlate') || errorText.includes('license') || errorText.includes('numurzīme')) {
-            errorMessage = 'Šī numurzīme jau tiek izmantota citai mašīnai';
+            errorMessage = 'This VIN code is already used by another car';
+          } else if (errorText.includes('LicensePlate') || errorText.includes('license')) {
+            errorMessage = 'This license plate is already used by another car';
           } else if (errorText.includes('duplicate') || errorText.includes('UNIQUE constraint')) {
-            errorMessage = 'Šie dati jau tiek izmantoti citai mašīnai';
+            errorMessage = 'This data is already used by another car';
           } else if (response.status === 400) {
-            errorMessage = 'Nepareizi ievadīti dati';
+            errorMessage = 'Invalid input data';
           } else if (response.status === 401) {
-            errorMessage = 'Nav autorizācijas';
+            errorMessage = 'No authorization';
           } else if (response.status === 403) {
-            errorMessage = 'Nav atļaujas veikt šo darbību';
+            errorMessage = 'No permission to perform this action';
           } else if (response.status >= 500) {
-            errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+            errorMessage = 'Server error. Please try again later';
           } else {
             errorMessage = response.statusText || errorMessage;
           }
         } catch (textError) {
           console.error('UpdateCar Text Parse Failed:', textError);
           // Last fallback
-          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Nezināma kļūda'}`;
+          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Unknown error'}`;
         }
       }
       
@@ -443,7 +443,7 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      let errorMessage = 'Neizdevās nodot īpašumtiesības';
+      let errorMessage = 'Failed to transfer ownership';
       
       try {
         const error = await response.json();
@@ -452,15 +452,15 @@ export const carApi = {
         }
       } catch (jsonError) {
         if (response.status === 400) {
-          errorMessage = 'Nepareizi ievadīti dati';
+          errorMessage = 'Invalid input data';
         } else if (response.status === 401) {
-          errorMessage = 'Nav autorizācijas';
+          errorMessage = 'Not authorized';
         } else if (response.status === 403) {
-          errorMessage = 'Nav atļaujas nodot īpašumtiesības';
+          errorMessage = 'No permission to transfer ownership';
         } else if (response.status === 404) {
-          errorMessage = 'Lietotājs ar šādu e-pasta adresi neeksistē';
+          errorMessage = 'User with this email does not exist';
         } else if (response.status >= 500) {
-          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+          errorMessage = 'Server error. Please try again later';
         } else {
           errorMessage = response.statusText || errorMessage;
         }
@@ -489,7 +489,7 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      let errorMessage = 'Neizdevās mainīt lietotāja lomu';
+      let errorMessage = 'Failed to change user role';
       
       try {
         const error = await response.json();
@@ -498,13 +498,13 @@ export const carApi = {
         }
       } catch (jsonError) {
         if (response.status === 400) {
-          errorMessage = 'Nepareizi ievadīti dati';
+          errorMessage = 'Invalid input data';
         } else if (response.status === 403) {
-          errorMessage = 'Nav atļaujas mainīt šo lomu';
+          errorMessage = 'No permission to change this role';
         } else if (response.status === 404) {
-          errorMessage = 'Lietotājs nav atrasts';
+          errorMessage = 'User not found';
         } else if (response.status >= 500) {
-          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+          errorMessage = 'Server error. Please try again later';
         }
       }
       
@@ -531,7 +531,7 @@ export const carApi = {
     });
 
     if (!response.ok) {
-      let errorMessage = 'Neizdevās piešķirt apskatītāja lomu';
+      let errorMessage = 'Failed to assign viewer role';
       
       try {
         const error = await response.json();
@@ -540,11 +540,11 @@ export const carApi = {
         }
       } catch (jsonError) {
         if (response.status === 400) {
-          errorMessage = 'Nepareizi ievadīti dati';
+          errorMessage = 'Invalid input data';
         } else if (response.status === 404) {
-          errorMessage = 'Lietotājs ar šādu e-pasta adresi neeksistē';
+          errorMessage = 'User with this email does not exist';
         } else if (response.status >= 500) {
-          errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+          errorMessage = 'Server error. Please try again later';
         }
       }
       
@@ -571,7 +571,7 @@ export const carApi = {
       });
 
       if (!response.ok) {
-        let errorMessage = 'Neizdevās noņemt lietotāja piekļuvi';
+        let errorMessage = 'Failed to remove user access';
         
         try {
           const error = await response.json();
@@ -580,13 +580,13 @@ export const carApi = {
           }
         } catch (jsonError) {
           if (response.status === 400) {
-            errorMessage = 'Nepareizi ievadīti dati';
+            errorMessage = 'Invalid input data';
           } else if (response.status === 403) {
-            errorMessage = 'Nav atļaujas noņemt šo piekļuvi';
+            errorMessage = 'No permission to remove this access';
           } else if (response.status === 404) {
-            errorMessage = 'Lietotājs nav atrasts';
+            errorMessage = 'User not found';
           } else if (response.status >= 500) {
-            errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+            errorMessage = 'Server error. Please try again later';
           }
         }
         
@@ -596,7 +596,7 @@ export const carApi = {
       return response.json();
     } catch (error) {
       console.error('Remove user access error:', error);
-      throw new Error(error instanceof Error ? error.message : 'Neizdevās noņemt lietotāja piekļuvi');
+      throw new Error(error instanceof Error ? error.message : 'Failed to remove user access');
     }
   }
 };
@@ -606,7 +606,7 @@ export const deleteCar = async (carId: number): Promise<boolean> => {
   try {
     const token = tokenManager.getToken();
     if (!token) {
-      throw new Error('Nav autorizācijas tokena');
+      throw new Error('No authentication token');
     }
 
     const response = await fetch(`${API_BASE_URL}/cars/${carId}`, {
@@ -618,7 +618,7 @@ export const deleteCar = async (carId: number): Promise<boolean> => {
     });
 
     if (!response.ok) {
-      let errorMessage = 'Neizdevās dzēst automašīnu';
+      let errorMessage = 'Failed to delete car';
       
       try {
         const error = await response.json();
@@ -635,7 +635,7 @@ export const deleteCar = async (carId: number): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Delete car error:', error);
-    throw new Error(error instanceof Error ? error.message : 'Neizdevās dzēst automašīnu');
+    throw new Error(error instanceof Error ? error.message : 'Failed to delete car');
   }
 };
 
@@ -695,7 +695,7 @@ export const inviteApi = {
     });
 
     if (!response.ok) {
-      let errorMessage = 'Neizdevās izveidot uzaicinājumu';
+      let errorMessage = 'Failed to create invitation';
       
       try {
         // Try to parse JSON response first
@@ -709,24 +709,24 @@ export const inviteApi = {
           const errorText = await response.clone().text();
           
           // Handle specific error cases
-          if (errorText.includes('not found') || errorText.includes('neeksistē')) {
-            errorMessage = 'Lietotājs ar šādu e-pastu neeksistē';
-          } else if (errorText.includes('already exists') || errorText.includes('jau eksistē')) {
-            errorMessage = 'Uzaicinājums šim lietotājam jau eksistē';
+          if (errorText.includes('not found')) {
+            errorMessage = 'User with this email does not exist';
+          } else if (errorText.includes('already exists')) {
+            errorMessage = 'Invitation for this user already exists';
           } else if (response.status === 400) {
-            errorMessage = 'Nepareizi ievadīti dati';
+            errorMessage = 'Invalid input data';
           } else if (response.status === 401) {
-            errorMessage = 'Nav autorizācijas';
+            errorMessage = 'No authorization';
           } else if (response.status === 403) {
-            errorMessage = 'Nav atļaujas nosūtīt uzaicinājumus';
+            errorMessage = 'No permission to send invitations';
           } else if (response.status >= 500) {
-            errorMessage = 'Servera kļūda. Lūdzu mēģiniet vēlāk';
+            errorMessage = 'Server error. Please try again later';
           } else {
             errorMessage = response.statusText || errorMessage;
           }
         } catch {
           // Last fallback
-          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Nezināma kļūda'}`;
+          errorMessage = `HTTP ${response.status}: ${response.statusText || 'Unknown error'}`;
         }
       }
       
@@ -752,7 +752,7 @@ export const inviteApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Neizdevās ielādēt saņemtos uzaicinājumus');
+      throw new Error('Failed to load received invitations');
     }
 
     return response.json();
@@ -774,7 +774,7 @@ export const inviteApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Neizdevās ielādēt nosūtītos uzaicinājumus');
+      throw new Error('Failed to load sent invitations');
     }
 
     return response.json();
@@ -797,7 +797,7 @@ export const inviteApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Neizdevās pieņemt uzaicinājumu');
+      throw new Error(error.message || 'Failed to accept invitation');
     }
 
     return response.json();
@@ -820,7 +820,7 @@ export const inviteApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Neizdevās noraidīt uzaicinājumu');
+      throw new Error(error.message || 'Failed to decline invitation');
     }
 
     return response.json();
@@ -843,7 +843,7 @@ export const inviteApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Neizdevās atcelt uzaicinājumu');
+      throw new Error(error.message || 'Failed to cancel invitation');
     }
 
     return response.json();

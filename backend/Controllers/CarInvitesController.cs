@@ -75,7 +75,7 @@ public class CarInvitesController : ControllerBase
             return StatusCode(403, new InviteActionResponse
             {
                 Success = false,
-                Message = "Tikai īpašnieki var sūtīt uzaicinājumus"
+                Message = "Only owners can send invitations"
             });
         }
 
@@ -136,7 +136,7 @@ public class CarInvitesController : ControllerBase
             return BadRequest(new InviteActionResponse
             {
                 Success = false,
-                Message = "Nepareiza lomas kods. Jābūt OWNER, DRIVER vai VIEWER"
+                Message = "Invalid role code. Must be OWNER, DRIVER, or VIEWER"
             });
         }
 
@@ -306,7 +306,7 @@ public class CarInvitesController : ControllerBase
             return Ok(new InviteActionResponse
             {
                 Success = true,
-                Message = "Uzaicinājums pieņemts veiksmīgi",
+                Message = "Invitation accepted successfully",
                 Invite = MapToInviteResponse(invite)
             });
         }
@@ -316,7 +316,7 @@ public class CarInvitesController : ControllerBase
             return StatusCode(500, new InviteActionResponse
             {
                 Success = false,
-                Message = "Kļūda pieņemot uzaicinājumu"
+                Message = "Error accepting invitation"
             });
         }
     }

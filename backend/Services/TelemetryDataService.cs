@@ -453,36 +453,36 @@ public class TelemetryDataService
 
         if (report.DrivingBehavior.HarshBrakingEvents.Count > 10)
         {
-            recommendations.Add("Samaziniet stingru bremzēšanu, uzturot drošu distanci un paredzot satiksmi");
+            recommendations.Add("Reduce harsh braking by maintaining safe distance and anticipating traffic");
         }
 
         if (report.DrivingBehavior.HarshAccelerationEvents.Count > 15)
         {
-            recommendations.Add("Praktizējiet pakāpenisku paātrinājumu, lai uzlabotu degvielas efektivitāti un samazinātu nolietojumu");
+            recommendations.Add("Practice gradual acceleration to improve fuel efficiency and reduce wear");
         }
 
         if (report.DrivingBehavior.SpeedingEvents.Count > 5)
         {
-            recommendations.Add("Ievērojiet ātruma ierobežojumus, lai samazinātu nelaimes gadījumu risku un apdrošināšanas izmaksas");
+            recommendations.Add("Observe speed limits to reduce accident risk and insurance costs");
         }
 
         if (report.DrivingBehavior.OverRevvingEvents.Count > 20)
         {
-            recommendations.Add("Pārslēdziet pārnesumus agrāk, lai samazinātu motora slodzi un uzlabotu ilgmūžību");
+            recommendations.Add("Shift gears earlier to reduce engine stress and improve longevity");
         }
 
         if (report.OverallDrivingScore >= 90)
         {
-            recommendations.Add("Izcila braukšana! Jūs varētu kvalificēties samazinātām apdrošināšanas prēmijām");
+            recommendations.Add("Excellent driving! You may qualify for reduced insurance premiums");
         }
         else if (report.OverallDrivingScore < 70)
         {
-            recommendations.Add("Apsveriet iespēju apmeklēt aizsardzības braukšanas kursus, lai uzlabotu drošību un samazinātu izmaksas");
+            recommendations.Add("Consider attending defensive driving courses to improve safety and reduce costs");
         }
 
         if (report.VehicleWearEstimate.BrakeWearLevel > WearLevel.Moderate)
         {
-            recommendations.Add("Ieplānojiet bremžu pārbaudi - braukšanas paradumi norāda uz paaugstinātu nolietojumu");
+            recommendations.Add("Schedule brake inspection - driving habits indicate increased wear");
         }
 
         return recommendations;

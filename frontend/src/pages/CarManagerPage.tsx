@@ -81,26 +81,26 @@ export default function CarManagerPage() {
       })
 
       if (response.success) {
-        alert(`Uzaicinājums nosūtīts lietotājam ${newInviteEmail}!`)
+        alert(`Invitation sent to user ${newInviteEmail}!`)
         setNewInviteEmail('')
         loadSentInvites()
       }
     } catch (err: any) {
-      alert(err.message || 'Neizdevās nosūtīt uzaicinājumu')
+      alert(err.message || 'Failed to send invitation')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleCancelInvite = async (inviteId: number) => {
-    if (!confirm('Vai tiešām vēlaties atcelt šo uzaicinājumu?')) return
+    if (!confirm('Are you sure you want to cancel this invitation?')) return
 
     try {
       await inviteApi.cancelInvite(inviteId)
-      alert('Uzaicinājums atcelts')
+      alert('Invitation canceled')
       loadSentInvites()
     } catch (err: any) {
-      alert(err.message || 'Neizdevās atcelt uzaicinājumu')
+      alert(err.message || 'Failed to cancel invitation')
     }
   }
 
@@ -109,29 +109,29 @@ export default function CarManagerPage() {
 
     // Brand validation
     if (!newCarData.brand.trim()) {
-      errors.brand = 'Marka ir obligāta'
+      errors.brand = 'Brand is required'
     } else if (newCarData.brand.length < 2) {
-      errors.brand = 'Markai jābūt vismaz 2 simboli garai'
+      errors.brand = 'Brand must be at least 2 characters long'
     }
 
     // Model validation
     if (!newCarData.model.trim()) {
-      errors.model = 'Modelis ir obligāts'
+      errors.model = 'Model is required'
     } else if (newCarData.model.length < 1) {
-      errors.model = 'Modelim jābūt vismaz 1 simbols garam'
+      errors.model = 'Model must be at least 1 character long'
     }
 
     // Year validation
     const currentYear = new Date().getFullYear()
     if (newCarData.year < 1900 || newCarData.year > currentYear + 1) {
-      errors.year = `Gadam jābūt starp 1900 un ${currentYear + 1}`
+      errors.year = `Year must be between 1900 and ${currentYear + 1}`
     }
 
     // License plate validation (Latvian format)
     if (newCarData.licensePlate && newCarData.licensePlate.trim()) {
       const licensePlatePattern = /^[A-Z]{1,2}-\d{1,4}$/
       if (!licensePlatePattern.test(newCarData.licensePlate.toUpperCase())) {
-        errors.licensePlate = 'Numurzīmei jābūt formātā: LV-1234 vai A-123'
+        errors.licensePlate = 'License plate must be in format: LV-1234 or A-123'
       }
     }
 
@@ -139,13 +139,13 @@ export default function CarManagerPage() {
     if (newCarData.vin && newCarData.vin.trim()) {
       const vinPattern = /^[A-HJ-NPR-Z0-9]{17}$/
       if (!vinPattern.test(newCarData.vin.toUpperCase())) {
-        errors.vin = 'VIN kodam jābūt tieši 17 simboli (bez I, O, Q)'
+        errors.vin = 'VIN code must be exactly 17 characters (without I, O, Q)'
       }
     }
 
     // Color validation
     if (newCarData.color && newCarData.color.length < 2) {
-      errors.color = 'Krāsai jābūt vismaz 2 simboli garai'
+      errors.color = 'Color must be at least 2 characters long'
     }
 
     setValidationErrors(errors)
@@ -192,7 +192,7 @@ export default function CarManagerPage() {
         const response = await carApi.updateCar(editingCar.carId, newCarData)
         
         if (response.success) {
-          alert(`Mašīna "${newCarData.brand} ${newCarData.model}" atjaunināta veiksmīgi!`)
+          alert(`Car "${newCarData.brand} ${newCarData.model}" updated successfully!`)
           
           // Reset form
           clearForm()
@@ -209,7 +209,7 @@ export default function CarManagerPage() {
         const response = await carApi.createCar(newCarData)
         
         if (response.success) {
-          alert(`Mašīna "${newCarData.brand} ${newCarData.model}" izveidota veiksmīgi!`)
+          alert(`Car "${newCarData.brand} ${newCarData.model}" created successfully!`)
           
           // Reset form
           clearForm()
@@ -223,9 +223,9 @@ export default function CarManagerPage() {
         }
       }
     } catch (err: any) {
-      let errorMessage = editingCar ? 'Neizdevās atjaunināt mašīnu' : 'Neizdevās izveidot mašīnu'
+      let errorMessage = editingCar ? 'Failed to update car' : 'Failed to create car'
       
-      // The API now returns specific error messages in Latvian, so we can use them directly
+      // The API now returns specific error messages, so we can use them directly
       if (err.message) {
         errorMessage = err.message
       }
@@ -238,11 +238,11 @@ export default function CarManagerPage() {
 
   const handleTransferOwnership = async () => {
     if (!selectedCarId || !transferOwnerEmail.trim()) {
-      alert('Lūdzu ievadiet jauna īpašnieka e-pasta adresi')
+      alert('Please enter the new owner\'s email address')
       return
     }
 
-    if (!confirm(`Vai tiešām vēlaties nodot īpašumtiesības lietotājam "${transferOwnerEmail}"? Šī darbība ir neatgriezeniska.`)) {
+    if (!confirm(`Are you sure you want to transfer ownership to user "${transferOwnerEmail}"? This action is irreversible.`)) {
       return
     }
 
@@ -271,7 +271,7 @@ export default function CarManagerPage() {
         loadCarUsers()
       }
     } catch (err: any) {
-      alert(err.message || 'Neizdevās nodot īpašumtiesības')
+      alert(err.message || 'Failed to transfer ownership')
     } finally {
       setIsTransferring(false)
     }
@@ -283,7 +283,7 @@ export default function CarManagerPage() {
     const oldRole = carUsers.find(user => user.userId === userId)?.roleCode
     if (!oldRole || oldRole === newRole) return
 
-    if (!confirm(`Vai tiešām vēlaties mainīt lietotāja lomu no "${getRoleDisplayName(oldRole)}" uz "${getRoleDisplayName(newRole)}"?`)) {
+    if (!confirm(`Are you sure you want to change user role from "${getRoleDisplayName(oldRole)}" to "${getRoleDisplayName(newRole)}"?`)) {
       return
     }
 
@@ -304,7 +304,7 @@ export default function CarManagerPage() {
         loadCarUsers()
       }
     } catch (err: any) {
-      alert(err.message || 'Neizdevās mainīt lietotāja lomu')
+      alert(err.message || 'Failed to change user role')
     } finally {
       setIsChangingRole(prev => ({ ...prev, [userId]: false }))
     }
@@ -316,7 +316,7 @@ export default function CarManagerPage() {
     const user = carUsers.find(u => u.userId === userId)
     if (!user) return
 
-    if (!confirm(`Vai tiešām vēlaties noņemt lietotāja "${user.email}" piekļuvi šai mašīnai?`)) {
+    if (!confirm(`Are you sure you want to remove user "${user.email}" access to this car?`)) {
       return
     }
 
@@ -325,9 +325,6 @@ export default function CarManagerPage() {
       
       if (response.success) {
         alert(response.message)
-        
-        // Check if user removed their own access
-        const currentUserEmail = user.email // You might want to get this from auth context
         
         // Reload car users first
         loadCarUsers()
@@ -341,17 +338,17 @@ export default function CarManagerPage() {
           const stillHasAccess = userCarsResponse.cars.some(car => car.carId === selectedCarId)
           if (!stillHasAccess) {
             setSelectedCarId(null)
-            alert('Jūsu piekļuve šai mašīnai ir noņemta. Jūs tiksiet novirzīts uz savu mašīnu sarakstu.')
+            alert('Your access to this car has been removed. You will be redirected to your car list.')
           }
         }
       }
     } catch (err: any) {
-      alert(err.message || 'Neizdevās noņemt lietotāja piekļuvi')
+      alert(err.message || 'Failed to remove user access')
     }
   }
 
   const handleDeleteCar = async (car: UserCar) => {
-    if (!confirm(`Vai tiešām vēlaties dzēst automašīnu "${car.brand} ${car.model} (${car.licensePlate})"?\n\nŠī darbība ir neatgriezeniska un dzēsīs visus ar šo automašīnu saistītos datus, ieskaitot lietotāju piekļuves un uzaicinājumus.`)) {
+    if (!confirm(`Are you sure you want to delete car "${car.brand} ${car.model} (${car.licensePlate})"?\n\nThis action is irreversible and will delete all data associated with this car, including user access and invitations.`)) {
       return
     }
 
@@ -359,7 +356,7 @@ export default function CarManagerPage() {
       const success = await deleteCar(car.carId)
       
       if (success) {
-        alert('Automašīna veiksmīgi dzēsta')
+        alert('Car successfully deleted')
         // Update cars list by removing the deleted car
         setUserCars(userCars.filter(c => c.carId !== car.carId))
         // Clear selection if the deleted car was selected
@@ -368,15 +365,15 @@ export default function CarManagerPage() {
         }
       }
     } catch (err: any) {
-      alert(err.message || 'Neizdevās dzēst automašīnu')
+      alert(err.message || 'Failed to delete car')
     }
   }
 
   const getRoleDisplayName = (role: string): string => {
     switch (role) {
-      case 'OWNER': return 'Īpašnieks'
-      case 'DRIVER': return 'Vadītājs'
-      case 'VIEWER': return 'Apskatītājs'
+      case 'OWNER': return 'Owner'
+      case 'DRIVER': return 'Driver'
+      case 'VIEWER': return 'Viewer'
       default: return role
     }
   }
@@ -397,7 +394,7 @@ export default function CarManagerPage() {
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
-                {editingCar ? 'Rediģēt mašīnu' : 'Pievienot jaunu mašīnu'}
+                {editingCar ? 'Edit Car' : 'Add New Car'}
               </h2>
               <Button 
                 onClick={() => {
@@ -410,7 +407,7 @@ export default function CarManagerPage() {
                 }}
                 variant="outline"
               >
-                {showCreateForm ? 'Aizvērt' : 'Pievienot mašīnu'}
+                {showCreateForm ? 'Close' : 'Add Car'}
               </Button>
             </div>
           </div>
@@ -420,7 +417,7 @@ export default function CarManagerPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Marka *
+                    Brand *
                   </label>
                   <input
                     type="text"
@@ -445,7 +442,7 @@ export default function CarManagerPage() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Modelis *
+                    Model *
                   </label>
                   <input
                     type="text"
@@ -470,7 +467,7 @@ export default function CarManagerPage() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Gads
+                    Year
                   </label>
                   <input
                     type="number"
@@ -496,7 +493,7 @@ export default function CarManagerPage() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Numurzīme
+                    License Plate
                   </label>
                   <input
                     type="text"
@@ -537,20 +534,20 @@ export default function CarManagerPage() {
                         ? 'border-red-300 focus:border-red-500' 
                         : 'border-gray-300 focus:border-blue-500'
                     }`}
-                    placeholder="17 simboli (bez I, O, Q)"
+                    placeholder="17 characters (without I, O, Q)"
                     maxLength={17}
                   />
                   {validationErrors.vin && (
                     <p className="mt-1 text-sm text-red-600">{validationErrors.vin}</p>
                   )}
                   {!validationErrors.vin && newCarData.vin && (
-                    <p className="mt-1 text-sm text-gray-500">{newCarData.vin.length}/17 simboli</p>
+                    <p className="mt-1 text-sm text-gray-500">{newCarData.vin.length}/17 characters</p>
                   )}
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Krāsa
+                    Color
                   </label>
                   <input
                     type="text"
@@ -566,7 +563,7 @@ export default function CarManagerPage() {
                         ? 'border-red-300 focus:border-red-500' 
                         : 'border-gray-300 focus:border-blue-500'
                     }`}
-                    placeholder="Melna, Balta, Sudraba..."
+                    placeholder="Black, White, Silver..."
                   />
                   {validationErrors.color && (
                     <p className="mt-1 text-sm text-red-600">{validationErrors.color}</p>
@@ -583,21 +580,21 @@ export default function CarManagerPage() {
                   }}
                   disabled={isCreatingCar}
                 >
-                  Atcelt
+                  Cancel
                 </Button>
                 <Button
                   onClick={handleSaveCar}
                   disabled={isCreatingCar || !newCarData.brand.trim() || !newCarData.model.trim()}
                 >
                   {isCreatingCar 
-                    ? (editingCar ? 'Atjaunina...' : 'Izveido...')
-                    : (editingCar ? 'Atjaunināt mašīnu' : 'Izveidot mašīnu')
+                    ? (editingCar ? 'Updating...' : 'Creating...')
+                    : (editingCar ? 'Update Car' : 'Create Car')
                   }
                 </Button>
               </div>
               
               <p className="text-xs text-gray-500 mt-3">
-                * Obligātie lauki: Marka un Modelis. {editingCar ? 'Atjauninot' : 'Izveidojot'} mašīnu jūs {editingCar ? 'saglabājat' : 'automātiski kļūstat par'} tās {editingCar ? 'pašreizējo lomu' : 'īpašnieku'}.
+                * Required fields: Brand and Model. By {editingCar ? 'updating' : 'creating'} a car you {editingCar ? 'maintain' : 'automatically become'} its {editingCar ? 'current role' : 'owner'}.
               </p>
             </div>
           )}
@@ -606,13 +603,13 @@ export default function CarManagerPage() {
         {/* My Cars Section */}
         <div className="mb-8 bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Manas mašīnas</h2>
+            <h2 className="text-lg font-semibold text-gray-900">My Cars</h2>
           </div>
           <div className="p-6">
             {userCars.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                <p>Jums nav piekļuves nevienai mašīnai.</p>
-                <p className="text-sm mt-2">Lūdziet citam lietotājam jūs uzaicināt.</p>
+                <p>You don't have access to any cars.</p>
+                <p className="text-sm mt-2">Ask another user to invite you.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -633,14 +630,14 @@ export default function CarManagerPage() {
                         <span className="text-sm text-gray-500">{car.licensePlate}</span>
                       </div>
                       <div className="space-y-2 text-sm text-gray-600">
-                        <div>VIN: {car.vin || 'Nav norādīts'}</div>
-                        <div>Gads: {car.year}</div>
-                        <div>Krāsa: {car.color || 'Nav norādīta'}</div>
+                        <div>VIN: {car.vin || 'Not specified'}</div>
+                        <div>Year: {car.year}</div>
+                        <div>Color: {car.color || 'Not specified'}</div>
                       </div>
                     </div>
                     <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
                       <span className="text-xs text-gray-500">
-                        Pievienots: {car.assignedAt ? new Date(car.assignedAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
+                        Added: {car.assignedAt ? new Date(car.assignedAt).toLocaleDateString('en-US') : 'Unknown'}
                       </span>
                       <div className="flex space-x-2">
                         {car.roleCode === 'OWNER' && (
@@ -652,7 +649,7 @@ export default function CarManagerPage() {
                               handleEditCar(car)
                             }}
                           >
-                            Rediģēt
+                            Edit
                           </Button>
                         )}
                         {car.roleCode === 'OWNER' && (
@@ -665,7 +662,7 @@ export default function CarManagerPage() {
                             }}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
-                            Dzēst
+                            Delete
                           </Button>
                         )}
                       </div>
@@ -681,9 +678,9 @@ export default function CarManagerPage() {
         {selectedCarId && selectedCar && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Piekļuves pārvaldība</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Access Management</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Pārvaldīt lietotājus, kuriem ir piekļuve auto: {selectedCar.brand} {selectedCar.model} ({selectedCar.licensePlate})
+                Manage users who have access to car: {selectedCar.brand} {selectedCar.model} ({selectedCar.licensePlate})
               </p>
             </div>
 
@@ -693,11 +690,11 @@ export default function CarManagerPage() {
                 <div className="mb-6 space-y-6">
                   {/* Invite User Section */}
                   <div>
-                    <h3 className="text-md font-semibold text-gray-900 mb-3">Uzaicināt lietotāju</h3>
+                    <h3 className="text-md font-semibold text-gray-900 mb-3">Invite User</h3>
                     <div className="flex space-x-4">
                       <input
                         type="email"
-                        placeholder="Īpašnieka e-pasts"
+                        placeholder="User's email"
                         value={newInviteEmail}
                         onChange={(e) => setNewInviteEmail(e.target.value)}
                         className="flex-1 border border-blue-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -707,21 +704,21 @@ export default function CarManagerPage() {
                         onChange={(e) => setNewInviteRole(e.target.value as 'OWNER' | 'DRIVER' | 'VIEWER')}
                         className="border border-blue-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="DRIVER">Vadītājs</option>
-                        <option value="VIEWER">Apskatītājs</option>
+                        <option value="DRIVER">Driver</option>
+                        <option value="VIEWER">Viewer</option>
                       </select>
                       <Button
                         onClick={handleInvite}
                         disabled={!newInviteEmail || isLoading}
                         className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
-                        {isLoading ? 'Sūta...' : 'Uzaicināt'}
+                        {isLoading ? 'Sending...' : 'Invite'}
                       </Button>
                     </div>
                     <div className="mt-2 text-xs text-gray-500 space-y-1">
-                      <p><strong>Vadītājs:</strong> Var izmantot mašīnu un skatīt braukšanas datus</p>
-                      <p><strong>Apskatītājs:</strong> Var tikai skatīt mašīnas informāciju (bez braukšanas datiem)</p>
-                      <p className="text-yellow-700"><strong>Piezīme:</strong> Īpašnieka lomu var piešķirt tikai caur īpašumtiesību nodošanu</p>
+                      <p><strong>Driver:</strong> Can use the car and view driving data</p>
+                      <p><strong>Viewer:</strong> Can only view car information (without driving data)</p>
+                      <p className="text-yellow-700"><strong>Note:</strong> Owner role can only be assigned through ownership transfer</p>
                     </div>
                   </div>
                 </div>
@@ -729,12 +726,12 @@ export default function CarManagerPage() {
 
               {/* Current Users */}
               <div className="mb-6">
-                <h3 className="text-md font-semibold text-gray-900 mb-3">Pašreizējie lietotāji</h3>
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Current Users</h3>
                 <div className="space-y-3">
                   {carUsers.length === 0 ? (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                       <p className="text-sm text-gray-600">
-                        Nav lietotāju ar piekļuvi šai mašīnai.
+                        No users have access to this car.
                       </p>
                     </div>
                   ) : (
@@ -757,13 +754,13 @@ export default function CarManagerPage() {
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
                               {user.firstName && user.lastName && `${user.firstName} ${user.lastName} • `}
-                              Pievienots: {user.assignedAt ? new Date(user.assignedAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
+                              Added: {user.assignedAt ? new Date(user.assignedAt).toLocaleDateString('en-US') : 'Unknown'}
                             </div>
                             
                             {/* Role Management - Only show if not OWNER (OWNER requires ownership transfer) */}
                             {canInviteUsers && user.roleCode !== 'OWNER' && (
                               <div className="flex items-center space-x-2 mt-2">
-                                <span className="text-xs text-gray-500">Mainīt lomu:</span>
+                                <span className="text-xs text-gray-500">Change role:</span>
                                 <select
                                   value={roleChanges[user.userId] || user.roleCode}
                                   onChange={(e) => setRoleChanges(prev => ({ ...prev, [user.userId]: e.target.value }))}
@@ -784,7 +781,7 @@ export default function CarManagerPage() {
                                       className="text-xs px-2 py-1 h-6 bg-blue-600 hover:bg-blue-700 text-white border border-blue-600 hover:border-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                                       disabled={isChangingRole[user.userId]}
                                     >
-                                      {isChangingRole[user.userId] ? 'Maina...' : 'Mainīt'}
+                                      {isChangingRole[user.userId] ? 'Changing...' : 'Change'}
                                     </Button>
                                     <Button
                                       onClick={() => setRoleChanges(prev => {
@@ -797,7 +794,7 @@ export default function CarManagerPage() {
                                       className="text-xs px-2 py-1 h-6"
                                       disabled={isChangingRole[user.userId]}
                                     >
-                                      Atcelt
+                                      Cancel
                                     </Button>
                                   </div>
                                 )}
@@ -813,7 +810,7 @@ export default function CarManagerPage() {
                               size="sm"
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              Noņemt
+                              Remove
                             </Button>
                           )}
                         </div>
@@ -825,12 +822,12 @@ export default function CarManagerPage() {
 
               {/* Sent Invites */}
               <div className="mb-6">
-                <h3 className="text-md font-semibold text-gray-900 mb-3">Nosūtītie uzaicinājumi</h3>
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Sent Invitations</h3>
                 <div className="space-y-3">
                   {sentInvites.length === 0 ? (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                       <p className="text-sm text-gray-600">
-                        Nav nosūtītu uzaicinājumu šai mašīnai.
+                        No invitations sent for this car.
                       </p>
                     </div>
                   ) : (
@@ -846,15 +843,15 @@ export default function CarManagerPage() {
                                 invite.inviteStatus === 'DECLINED' ? 'bg-red-100 text-red-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
-                                {invite.inviteStatus === 'PENDING' ? 'Gaida' :
-                                 invite.inviteStatus === 'ACCEPTED' ? 'Pieņemts' :
-                                 invite.inviteStatus === 'DECLINED' ? 'Noraidīts' :
-                                 'Atcelts'}
+                                {invite.inviteStatus === 'PENDING' ? 'Pending' :
+                                 invite.inviteStatus === 'ACCEPTED' ? 'Accepted' :
+                                 invite.inviteStatus === 'DECLINED' ? 'Declined' :
+                                 'Canceled'}
                               </span>
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
-                              Loma: {getRoleDisplayName(invite.roleCode)} •
-                              Nosūtīts: {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
+                              Role: {getRoleDisplayName(invite.roleCode)} •
+                              Sent: {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('en-US') : 'Unknown'}
                             </div>
                           </div>
                           {invite.inviteStatus === 'PENDING' && canInviteUsers && (
@@ -863,7 +860,7 @@ export default function CarManagerPage() {
                               variant="outline"
                               size="sm"
                             >
-                              Atcelt
+                              Cancel
                             </Button>
                           )}
                         </div>
@@ -876,18 +873,18 @@ export default function CarManagerPage() {
               {/* Ownership Transfer - Only for OWNER */}
               {canTransferOwnership && (
                 <div className="mb-6">
-                  <h3 className="text-md font-semibold text-gray-900 mb-3">Nodot īpašumtiesības</h3>
+                  <h3 className="text-md font-semibold text-gray-900 mb-3">Transfer Ownership</h3>
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div className="mb-4">
                       <p className="text-sm text-yellow-800 mb-2">
-                        <strong>Brīdinājums:</strong> Nododot īpašumtiesības, jūs zaudēsiet Īpašnieka statusu. 
-                        Šī darbība ir neatgriezeniska.
+                        <strong>Warning:</strong> By transferring ownership, you will lose your Owner status. 
+                        This action is irreversible.
                       </p>
                     </div>
                     <div className="flex space-x-4">
                       <input
                         type="email"
-                        placeholder="Jauna īpašnieka e-pasts"
+                        placeholder="New owner's email"
                         value={transferOwnerEmail}
                         onChange={(e) => setTransferOwnerEmail(e.target.value)}
                         className="flex-1 border border-yellow-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
@@ -898,7 +895,7 @@ export default function CarManagerPage() {
                         disabled={!transferOwnerEmail.trim() || isTransferring}
                         className="bg-yellow-600 hover:bg-yellow-700 text-white"
                       >
-                        {isTransferring ? 'Nodod...' : 'Nodot īpašumtiesības'}
+                        {isTransferring ? 'Transferring...' : 'Transfer Ownership'}
                       </Button>
                     </div>
                   </div>
@@ -907,37 +904,37 @@ export default function CarManagerPage() {
 
               {/* Car Details */}
               <div>
-                <h3 className="text-md font-semibold text-gray-900 mb-3">Mašīnas detaļas</h3>
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Car Details</h3>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="text-sm font-medium text-gray-600">Marka:</span>
+                      <span className="text-sm font-medium text-gray-600">Brand:</span>
                       <p className="text-sm text-gray-900">{selectedCar.brand}</p>
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-600">Modelis:</span>
+                      <span className="text-sm font-medium text-gray-600">Model:</span>
                       <p className="text-sm text-gray-900">{selectedCar.model}</p>
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-600">Gads:</span>
+                      <span className="text-sm font-medium text-gray-600">Year:</span>
                       <p className="text-sm text-gray-900">{selectedCar.year}</p>
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-600">Numurzīme:</span>
+                      <span className="text-sm font-medium text-gray-600">License Plate:</span>
                       <p className="text-sm text-gray-900">{selectedCar.licensePlate}</p>
                     </div>
                     <div>
                       <span className="text-sm font-medium text-gray-600">VIN:</span>
-                      <p className="text-sm text-gray-900">{selectedCar.vin || 'Nav norādīts'}</p>
+                      <p className="text-sm text-gray-900">{selectedCar.vin || 'Not specified'}</p>
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-600">Krāsa:</span>
-                      <p className="text-sm text-gray-900">{selectedCar.color || 'Nav norādīta'}</p>
+                      <span className="text-sm font-medium text-gray-600">Color:</span>
+                      <p className="text-sm text-gray-900">{selectedCar.color || 'Not specified'}</p>
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-600">Pievienots:</span>
+                      <span className="text-sm font-medium text-gray-600">Added:</span>
                       <p className="text-sm text-gray-900">
-                        {selectedCar.assignedAt ? new Date(selectedCar.assignedAt).toLocaleDateString('lv-LV') : 'Nav zināms'}
+                        {selectedCar.assignedAt ? new Date(selectedCar.assignedAt).toLocaleDateString('en-US') : 'Unknown'}
                       </p>
                     </div>
                   </div>

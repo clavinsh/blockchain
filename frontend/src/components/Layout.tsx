@@ -50,10 +50,10 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   const navigationItems = [
-    { path: '/dashboard', label: 'Galvenā panelis', icon: '📊' },
-    { path: '/analyzed-data', label: 'Analizētie dati', icon: '📈' },
-    { path: '/car-manager', label: 'Mašīnu pārvaldība', icon: '🚗' },
-    { path: '/invitations', label: 'Uzaicinājumi', icon: '✉️' }
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/analyzed-data', label: 'Analyzed Data', icon: '📈' },
+    { path: '/car-manager', label: 'Car Manager', icon: '🚗' },
+    { path: '/invitations', label: 'Invitations', icon: '✉️' }
   ]
 
   return (
@@ -78,7 +78,7 @@ export default function Layout({ children }: LayoutProps) {
                 disabled={isLoadingCars}
               >
                 <option value="">
-                  {isLoadingCars ? 'Ielādē...' : userCars.length === 0 ? 'Nav pieejamu auto' : 'Izvēlieties auto'}
+                  {isLoadingCars ? 'Loading...' : userCars.length === 0 ? 'No cars available' : 'Select a car'}
                 </option>
                 {userCars.map((car) => (
                   <option key={car.carId} value={car.carId}>
@@ -90,14 +90,14 @@ export default function Layout({ children }: LayoutProps) {
               {/* User Menu */}
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-700">
-                  {user?.username || 'Lietotājs'}
+                  {user?.username || 'User'}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleLogout}
                 >
-                  Iziet
+                  Logout
                 </Button>
               </div>
             </div>

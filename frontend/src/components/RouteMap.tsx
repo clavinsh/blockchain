@@ -34,19 +34,19 @@ const RouteMap: React.FC<RouteMapProps> = ({
     }, [carId, routeFromDate, routeToDate])
 
     const translateError = (msg?: string) => {
-        if (msg?.includes('No route data found for the specified period')) return 'Nav maršruta datu norādītajā periodā'
-        if (msg?.includes('invalid date')) return 'Nederīgs datums'
-        return 'Notikusi kļūda'
+        if (msg?.includes('No route data found for the specified period')) return 'No route data for the specified period'
+        if (msg?.includes('invalid date')) return 'Invalid date'
+        return 'An error occurred'
     }
     const validateDates = (fromIso: string, toIso: string) => {
         const fromDate = new Date(fromIso)
         const toDate = new Date(toIso)
         if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-            setRouteDataError('Nederīgs datums')
+            setRouteDataError('Invalid date')
             return false
         }
         if (fromDate >= toDate) {
-            setRouteDataError('Sākuma datumam jābūt pirms beigu datuma')
+            setRouteDataError('Start date must be before end date')
             return false
         }
         return true
@@ -91,8 +91,8 @@ const RouteMap: React.FC<RouteMapProps> = ({
                         <Popup>
                             <div className="text-sm space-y-1">
                                 <div>{new Date(p.timestamp).toLocaleString()}</div>
-                                <div>Ātrums: {p.speedKmh ?? p.speed ?? '-'} km/h</div>
-                                <div>Augstums: {p.altitude ?? '-'} m</div>
+                                <div>Speed: {p.speedKmh ?? p.speed ?? '-'} km/h</div>
+                                <div>Altitude: {p.altitude ?? '-'} m</div>
                             </div>
                         </Popup>
                     </CircleMarker>
@@ -104,15 +104,15 @@ const RouteMap: React.FC<RouteMapProps> = ({
     return (
         <div className="mt-8 bg-white rounded-lg shadow p-6">
             <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Maršruta karte</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Route Map</h3>
                 <p className="text-gray-400 text-sm">
-                    Izvēlieties sākuma un beigu datumu un laiku, lai skatītu mašīnas maršrutu šajā periodā.
+                    Select start and end date and time to view the car's route during this period.
                 </p>
             </div>
             {/* Date/time controls for route */}
             <div className="mb-4 flex flex-wrap items-end gap-3">
                 <label className="text-sm">
-                    <div className="text-xs text-gray-600">Sākuma datums un laiks</div>
+                    <div className="text-xs text-gray-600">Start date and time</div>
                     <input type="hidden" id="timezone" name="timezone" value="-08:00" />
                     <input
                         type="datetime-local"
@@ -122,7 +122,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
                     />
                 </label>
                 <label className="text-sm">
-                    <div className="text-xs text-gray-600">Beigu datums un laiks</div>
+                    <div className="text-xs text-gray-600">End date and time</div>
                     <input
                         type="datetime-local"
                         value={routeToDate}
@@ -130,7 +130,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
                         className="border px-2 py-1 rounded"
                     />
                 </label>
-                <div className="text-sm text-gray-500 ml-2">{routeData?.points?.length ?? 0} mērījumi</div>
+                <div className="text-sm text-gray-500 ml-2">{routeData?.points?.length ?? 0} measurements</div>
                 <div className="text-sm text-red-500 ml-2">{routeDataError}</div>
             </div>
             {/* Map for route */}

@@ -17,7 +17,6 @@ export function AppRouter() {
         <Route path="/analyzed-data" element={<Layout><AnalyzedDataPage /></Layout>} />
         <Route path="/car-manager" element={<Layout><CarManagerPage /></Layout>} />
         <Route path="/invitations" element={<Layout><InvitationsPage /></Layout>} />
-        <Route path="/reports" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Atskaites - Drīzumā</h1></div></Layout>} />
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

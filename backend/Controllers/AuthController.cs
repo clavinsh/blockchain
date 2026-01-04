@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
                 return Ok(new LoginResponse
                 {
                     Success = false,
-                    Message = "Nepareizi pierakstīšanās dati"
+                    Message = "Invalid login credentials"
                 });
             }
 
@@ -49,7 +49,7 @@ public class AuthController : ControllerBase
                 return Ok(new LoginResponse
                 {
                     Success = false,
-                    Message = "Nepareizi pierakstīšanās dati"
+                    Message = "Invalid login credentials"
                 });
             }
 
@@ -59,7 +59,7 @@ public class AuthController : ControllerBase
             return Ok(new LoginResponse
             {
                 Success = true,
-                Message = "Pierakstīšanās veiksmīga",
+                Message = "Login successful",
                 Token = token,
                 User = new UserInfo
                 {
@@ -77,7 +77,7 @@ public class AuthController : ControllerBase
             return StatusCode(500, new LoginResponse
             {
                 Success = false,
-                Message = "Servera kļūda"
+                Message = "Server error"
             });
         }
     }
@@ -93,7 +93,7 @@ public class AuthController : ControllerBase
                 return BadRequest(new LoginResponse
                 {
                     Success = false,
-                    Message = "E-pasts jau ir reģistrēts"
+                    Message = "Email is already registered"
                 });
             }
 
@@ -103,7 +103,7 @@ public class AuthController : ControllerBase
                 return BadRequest(new LoginResponse
                 {
                     Success = false,
-                    Message = "Lietotājvārds jau ir aizņemts"
+                    Message = "Username is already taken"
                 });
             }
 
@@ -132,7 +132,7 @@ public class AuthController : ControllerBase
             return Ok(new LoginResponse
             {
                 Success = true,
-                Message = "Reģistrācija veiksmīga",
+                Message = "Registration successful",
                 Token = token,
                 User = new UserInfo
                 {
@@ -150,7 +150,7 @@ public class AuthController : ControllerBase
             return StatusCode(500, new LoginResponse
             {
                 Success = false,
-                Message = "Servera kļūda"
+                Message = "Server error"
             });
         }
     }

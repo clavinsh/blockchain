@@ -35,40 +35,40 @@ export default function RegisterPage() {
 
     // Username validation
     if (!formData.username) {
-      newErrors.username = "Lietotājvārds ir obligāts";
+      newErrors.username = "Username is required";
     } else if (formData.username.length < 3) {
-      newErrors.username = "Lietotājvārdam jābūt vismaz 3 simboli garam";
+      newErrors.username = "Username must be at least 3 characters";
     }
 
     // First name validation
     if (!formData.firstName) {
-      newErrors.firstName = "Vārds ir obligāts";
+      newErrors.firstName = "First name is required";
     }
 
     // Last name validation
     if (!formData.lastName) {
-      newErrors.lastName = "Uzvārds ir obligāts";
+      newErrors.lastName = "Last name is required";
     }
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = "E-pasts ir obligāts";
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Nepareizs e-pasta formāts";
+      newErrors.email = "Invalid email format";
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = "Parole ir obligāta";
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = "Parolei jābūt vismaz 6 simboli garā";
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     // Confirm password validation
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Paroles apstiprināšana ir obligāta";
+      newErrors.confirmPassword = "Password confirmation is required";
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Paroles nesakrīt";
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
@@ -114,24 +114,24 @@ export default function RegisterPage() {
           // Auto-login if token provided
           tokenManager.setToken(response.token);
           tokenManager.setUser(response.user);
-          alert(response.message || "Reģistrācija veiksmīga! Jūs esat automātiski piereģistrēti.");
+          alert(response.message || "Registration successful! You are now logged in.");
           navigate('/dashboard');
         } else {
           // Just registration success, redirect to login
-          alert(response.message || "Reģistrācija veiksmīga! Lūdzu, pierakstieties.");
+          alert(response.message || "Registration successful! Please log in.");
           navigate('/login');
         }
       } else {
         setErrors(prev => ({
           ...prev,
-          username: response.message || "Reģistrācija neizdevās"
+          username: response.message || "Registration failed"
         }));
       }
     } catch (error) {
       console.error('Registration error:', error);
       setErrors(prev => ({
         ...prev,
-        username: "Savienojuma kļūda. Lūdzu, mēģiniet vēlreiz."
+        username: "Connection error. Please try again."
       }));
     } finally {
       setIsLoading(false);
@@ -142,10 +142,10 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-            Reģistrācija
+            Register
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Ievadiet savu informāciju, lai izveidotu kontu
+            Enter your information to create an account
           </p>
         </div>
 
@@ -153,7 +153,7 @@ export default function RegisterPage() {
           <div className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Lietotājvārds *
+                Username *
               </label>
               <input
                 id="username"
@@ -166,7 +166,7 @@ export default function RegisterPage() {
                   ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                   } placeholder-gray-500 text-gray-900`}
-                placeholder="Izvēlieties lietotājvārdu"
+                placeholder="Choose a username"
               />
               {errors.username && (
                 <p className="mt-1 text-sm text-red-600">{errors.username}</p>
@@ -175,7 +175,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                Vārds *
+                First Name *
               </label>
               <input
                 id="firstName"
@@ -188,7 +188,7 @@ export default function RegisterPage() {
                   ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                   } placeholder-gray-500 text-gray-900`}
-                placeholder="Jūsu vārds"
+                placeholder="Your first name"
               />
               {errors.firstName && (
                 <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
@@ -197,7 +197,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                Uzvārds *
+                Last Name *
               </label>
               <input
                 id="lastName"
@@ -210,7 +210,7 @@ export default function RegisterPage() {
                   ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                   } placeholder-gray-500 text-gray-900`}
-                placeholder="Jūsu uzvārds"
+                placeholder="Your last name"
               />
               {errors.lastName && (
                 <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
@@ -219,7 +219,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                E-pasts *
+                Email *
               </label>
               <input
                 id="email"
@@ -232,7 +232,7 @@ export default function RegisterPage() {
                   ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                   } placeholder-gray-500 text-gray-900`}
-                placeholder="jūsu.epasts@example.com"
+                placeholder="your.email@example.com"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
@@ -241,7 +241,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Parole *
+                Password *
               </label>
               <input
                 id="password"
@@ -254,7 +254,7 @@ export default function RegisterPage() {
                   ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                   } placeholder-gray-500 text-gray-900`}
-                placeholder="Izvēlieties paroli"
+                placeholder="Choose a password"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
@@ -263,7 +263,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Apstiprināt paroli *
+                Confirm Password *
               </label>
               <input
                 id="confirmPassword"
@@ -276,7 +276,7 @@ export default function RegisterPage() {
                   ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                   } placeholder-gray-500 text-gray-900`}
-                placeholder="Ievadiet paroli atkārtoti"
+                placeholder="Enter password again"
               />
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
@@ -293,17 +293,17 @@ export default function RegisterPage() {
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Reģistrējas...
+                  Registering...
                 </div>
               ) : (
-                "Reģistrēties"
+                "Register"
               )}
             </Button>
           </div>
 
           <div className="text-center">
             <Link to="/login" className="text-sm text-blue-600 hover:text-blue-500">
-              Jau ir konts? Pierakstīties šeit
+              Already have an account? Log in here
             </Link>
           </div>
         </form>
