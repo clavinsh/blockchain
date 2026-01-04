@@ -54,7 +54,8 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/analyzed-data', label: 'Analyzed Data', icon: '📈' },
     { path: '/car-manager', label: 'Car Manager', icon: '🚗' },
-    { path: '/invitations', label: 'Invitations', icon: '✉️' }
+    { path: '/invitations', label: 'Invitations', icon: '✉️' },
+    { path: '/system-info', label: 'System Info', icon: '⚙️' }
   ]
 
   return (

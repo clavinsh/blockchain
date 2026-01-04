@@ -673,7 +673,7 @@ export default function CarManagerPage() {
         </div>
 
         {/* Access Management Section */}
-        {selectedCarId && selectedCar && (
+        {selectedCarId && selectedCar ? (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Access Management</h2>
@@ -942,7 +942,7 @@ export default function CarManagerPage() {
               </div>
             </div>
           </div>
-        )}
+        ): null}
       </main>
     </div>
   )

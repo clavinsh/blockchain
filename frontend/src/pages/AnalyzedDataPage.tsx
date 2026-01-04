@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useCarContext } from '@/contexts/CarContext'
 import {
   telemetryApi,
-  type VehicleTelemetry,
   type DrivingReport,
   type InsuranceSummary,
   type ResellerSummary
@@ -11,7 +10,6 @@ import RouteMap from '@/components/RouteMap'
 
 export default function AnalyzedDataPage() {
   const { selectedCarId, selectedCar } = useCarContext()
-  const [blockchainData, setBlockchainData] = useState<VehicleTelemetry[]>([])
   const [drivingReport, setDrivingReport] = useState<DrivingReport | null>(null)
   const [insuranceSummary, setInsuranceSummary] = useState<InsuranceSummary | null>(null)
   const [resellerSummary, setResellerSummary] = useState<ResellerSummary | null>(null)
@@ -38,7 +36,7 @@ export default function AnalyzedDataPage() {
   const isViewer = userRole === 'VIEWER'
 
   // Set default tab based on role
-  const [activeTab, setActiveTab] = useState<'map' | 'driving' | 'insurance' | 'reseller' | 'system'>(
+  const [activeTab, setActiveTab] = useState<'map' | 'driving' | 'insurance' | 'reseller'>(
     isViewer ? 'insurance' : 'driving'
   )
 
@@ -48,16 +46,6 @@ export default function AnalyzedDataPage() {
       setError(null)
 
       console.log('Fetching telemetry data for car ID:', carId)
-
-      // Load telemetry data from CarDataCache (MySQL)
-      // Note: This displays MySQL cache data, not live blockchain
-      try {
-        const telemetryData = await telemetryApi.getBlockchainTelemetry(carId)
-        setBlockchainData(telemetryData)
-      } catch (err) {
-        console.error('Failed to fetch telemetry cache data:', err)
-        setBlockchainData([])
-      }
 
       // Calculate date range for reports (all time)
       const endDate = new Date()
@@ -100,7 +88,6 @@ export default function AnalyzedDataPage() {
     if (selectedCarId) {
       fetchBlockchainData(selectedCarId)
     } else {
-      setBlockchainData([])
       setDrivingReport(null)
       setInsuranceSummary(null)
       setResellerSummary(null)
@@ -244,15 +231,6 @@ export default function AnalyzedDataPage() {
                 }`}
             >
               Reseller Report
-            </button>
-            <button
-              onClick={() => setActiveTab('system')}
-              className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${activeTab === 'system'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-            >
-              System Info ({blockchainData.length})
             </button>
             <button
               onClick={() => setActiveTab('map')}
@@ -696,129 +674,6 @@ export default function AnalyzedDataPage() {
                     </ul>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* System Information Tab */}
-            {activeTab === 'system' && (
-              <div className="space-y-6">
-                {/* Export Button */}
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={() => exportToJSON(blockchainData, 'system_telemetry')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Export Telemetry JSON
-                  </button>
-                </div>
-                {/* System Status */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 sm:p-6">
-                  <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-4">System Status</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">Blockchain Network</span>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          ✓ Active
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">Hyperledger Fabric 2.5</p>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">Database</span>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          ✓ Connected
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">MySQL 8.0</p>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">Telemetry Records</span>
-                        <span className="text-lg font-bold text-blue-600">{blockchainData.length}</span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">Cached</p>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">API Gateway</span>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          ✓ Ready
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">Port 3001</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Blockchain Architecture */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Blockchain Architecture</h3>
-                  <div className="space-y-3 text-sm text-gray-700">
-                    <div className="flex items-start">
-                      <span className="font-semibold min-w-32">Channel:</span>
-                      <span>mychannel</span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="font-semibold min-w-32">Chaincode:</span>
-                      <span>vehicle (version 1.0)</span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="font-semibold min-w-32">Consensus:</span>
-                      <span>Raft (Orderer)</span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="font-semibold min-w-32">State DB:</span>
-                      <span>CouchDB 3.3</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Available Functions */}
-                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Available Functions</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">Vehicle Registration</h4>
-                      <p className="text-xs text-gray-600">Immutable registration history on blockchain ledger</p>
-                    </div>
-                    <div className="border-l-4 border-green-500 bg-green-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">Access Control</h4>
-                      <p className="text-xs text-gray-600">Decentralized user rights management</p>
-                    </div>
-                    <div className="border-l-4 border-purple-500 bg-purple-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">Telemetry Analysis</h4>
-                      <p className="text-xs text-gray-600">Driving data processing and report generation</p>
-                    </div>
-                    <div className="border-l-4 border-orange-500 bg-orange-50 rounded-r-lg p-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">Audit Log</h4>
-                      <p className="text-xs text-gray-600">Complete change history with timestamps</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Data Storage Info */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">Data Storage</h3>
-                  <p className="text-sm text-gray-700 mb-3">
-                    The system uses a hybrid approach for data storage:
-                  </p>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-start">
-                      <span><strong>Blockchain:</strong> Car registration metadata, ownership, access rights</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span><strong>MySQL:</strong> Telemetry data cached for faster access and analysis</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span><strong>Benefits:</strong> Blockchain security + SQL query speed</span>
-                    </li>
-                  </ul>
-                </div>
               </div>
             )}
             {activeTab === 'map' && (
