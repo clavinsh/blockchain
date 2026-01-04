@@ -17,6 +17,21 @@ export default function AnalyzedDataPage() {
   const [resellerSummary, setResellerSummary] = useState<ResellerSummary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Persist map dates across tab switches
+  // Option 1: Specific date that has data (current default)
+  const [mapFromDate, setMapFromDate] = useState<string>('2025-11-28T00:00')
+  const [mapToDate, setMapToDate] = useState<string>('2025-11-28T23:59')
+  
+  // Option 2: Last 7 days
+  // const [mapFromDate, setMapFromDate] = useState<string>(() => {
+  //   const date = new Date()
+  //   date.setDate(date.getDate() - 7)
+  //   return date.toISOString().slice(0, 16)
+  // })
+  // const [mapToDate, setMapToDate] = useState<string>(() => {
+  //   return new Date().toISOString().slice(0, 16)
+  // })
 
   // Get user role from selected car
   const userRole = selectedCar?.roleCode || ''
@@ -807,7 +822,14 @@ export default function AnalyzedDataPage() {
               </div>
             )}
             {activeTab === 'map' && (
-              <RouteMap carId={selectedCarId} routeColor="red" defaultFromDate='2025-11-28T00:00' defaultToDate='2025-11-28T23:59' />
+              <RouteMap 
+                carId={selectedCarId} 
+                routeColor="red" 
+                fromDate={mapFromDate}
+                toDate={mapToDate}
+                onFromDateChange={setMapFromDate}
+                onToDateChange={setMapToDate}
+              />
             )}
           </>
         )}

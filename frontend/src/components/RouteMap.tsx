@@ -9,6 +9,10 @@ export interface RouteMapProps {
     markerSize?: number,
     defaultFromDate?: string,
     defaultToDate?: string,
+    fromDate?: string,
+    toDate?: string,
+    onFromDateChange?: (date: string) => void,
+    onToDateChange?: (date: string) => void,
 }
 
 const RouteMap: React.FC<RouteMapProps> = ({
@@ -17,11 +21,35 @@ const RouteMap: React.FC<RouteMapProps> = ({
     markerSize = 2,
     defaultFromDate = "",
     defaultToDate = "",
+    fromDate,
+    toDate,
+    onFromDateChange,
+    onToDateChange,
 }) => {
     const [routeDataError, setRouteDataError] = useState<string | null>(null)
 
-    const [routeFromDate, setRouteFromDate] = useState<string>(defaultFromDate)
-    const [routeToDate, setRouteToDate] = useState<string>(defaultToDate)
+    const [internalFromDate, setInternalFromDate] = useState<string>(defaultFromDate)
+    const [internalToDate, setInternalToDate] = useState<string>(defaultToDate)
+    
+    const routeFromDate = fromDate !== undefined ? fromDate : internalFromDate
+    const routeToDate = toDate !== undefined ? toDate : internalToDate
+    
+    const setRouteFromDate = (date: string) => {
+        if (onFromDateChange) {
+            onFromDateChange(date)
+        } else {
+            setInternalFromDate(date)
+        }
+    }
+    
+    const setRouteToDate = (date: string) => {
+        if (onToDateChange) {
+            onToDateChange(date)
+        } else {
+            setInternalToDate(date)
+        }
+    }
+
     const [routeData, setRouteData] = useState<any>(null)
 
     useEffect(() => {
