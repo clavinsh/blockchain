@@ -17,9 +17,9 @@ export default function AnalyzedDataPage() {
   const [error, setError] = useState<string | null>(null)
   
   // Persist map dates across tab switches
-  // Option 1: Specific date that has data (current default)
-  const [mapFromDate, setMapFromDate] = useState<string>('2025-11-28T00:00')
-  const [mapToDate, setMapToDate] = useState<string>('2025-11-28T23:59')
+  // Default to full year range
+  const [mapFromDate, setMapFromDate] = useState<string>('2025-01-01T00:00')
+  const [mapToDate, setMapToDate] = useState<string>('2026-12-31T23:59')
   
   // Option 2: Last 7 days
   // const [mapFromDate, setMapFromDate] = useState<string>(() => {
